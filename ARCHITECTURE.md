@@ -19,6 +19,20 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   does not run Authelia (Kanevas AD-15, AD-55): an unauthenticated request is redirected to the stub's test-account
   selection, and `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie. P-1 and P-3 are proven
   on that path; P-3 expires the session by clearing the cookies of the WKWebView data store. A real Authelia is not tested by the chain.
+- **AD-session-1 — Session expiry is simulated inside the app, Debug only.** A UI test cannot reach the app's `WKWebsiteDataStore`.
+  The Debug configuration reads the launch argument `-KANEVAS_CLEAR_SESSION`; when present, before the first load, the app removes
+  the cookie and website data of `WKWebsiteDataStore.default()` (`SessionReset`, in the app target, behind
+  `#if DEBUG`). Release has no such code path, and no UI to sign out (the app draws nothing around Kanevas, E-1). Rejected: a
+  menu or button "sign out" (new visible function, outside the scoping).
+- **AD-session-2 — Persistence is the web view's, never rewritten.** B-3 holds if the Kanevas session cookie survives a kill of
+  the process: the test terminates the app and launches it again against the same stub. The app does not copy, store or re-inject
+  cookies (`docs/donnees.md`). If the stub sets a session-only cookie (no expiry) and the relaunch loses it, that is a fact of
+  Kanevas, not of the shell: the task writes it in `docs/tests.md` and the slice stops there (Kanevas change = feature on
+  `AntorFr/kanevas`, out of scope); it does not work around it in the app.
+- **AD-session-3 — One UI test file for P-1 to P-3.** `Tests/UITests/SessionTests.swift`, using the socle harness only (stub
+  start, `signIn(account:)`, screenshots). Observation is by reading elements of the web content (account choice page, map,
+  sheet title/lore text), never by pixels. Return to the target page after sign-in (B-4) is the stub redirect's behaviour; the
+  test asserts the map is shown again, the default target.
 - **AD-7 — Distribution.** Sideload, free Apple ID; no signing secret in the repository or the chain. The bench builds for the simulator only.
 - **AD-8 — Deployment.** None on the cluster: the app consumes deployed Kanevas. Nothing goes to `k8s-home-lab`.
 
