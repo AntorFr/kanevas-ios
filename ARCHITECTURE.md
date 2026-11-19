@@ -16,7 +16,9 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-5 — Base URL is configuration**, read from Info.plist, overridable by launch argument `-KANEVAS_URL` so UI tests point at the stub.
 - **AD-6 — Tests.** Unit tests (XCTest) on the navigation policy and error mapping (pure functions). UI tests on an iPad simulator:
   Kanevas in stub mode (`KANEVAS_STUB=1`, node only) is started on the bench and the app pointed at it; they cover P-1 to P-5 and attach screenshots. The stub
-  does not run Authelia: the session expiry/sign-in is exercised against the stub's own sign-in path, a real Authelia is not tested by the chain [À VÉRIFIER at the first task: what the stub offers for login].
+  does not run Authelia (Kanevas AD-15, AD-55): an unauthenticated request is redirected to the stub's test-account
+  selection, and `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie. P-1 and P-3 are proven
+  on that path; P-3 expires the session by clearing the cookies of the WKWebView data store. A real Authelia is not tested by the chain.
 - **AD-7 — Distribution.** Sideload, free Apple ID; no signing secret in the repository or the chain. The bench builds for the simulator only.
 - **AD-8 — Deployment.** None on the cluster: the app consumes deployed Kanevas. Nothing goes to `k8s-home-lab`.
 

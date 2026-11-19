@@ -10,7 +10,8 @@ they look at the universe map and go back to read the lore of the characters the
 readers, not editors. They sign in once; a prompt for a password on every launch would end the use.
 
 The **parent** (Monsieur) installs the app by sideload (free Apple ID, 7-day signature) and re-signs it
-when it expires. No one else operates the app.
+when it expires. No one else operates the app. This gesture happens in Xcode, outside the product: it has no
+journey or screen here and nothing in the app supports it (AD-7).
 
 ## Needs
 
@@ -35,9 +36,11 @@ when it expires. No one else operates the app.
 - **P-3 — Session expired.** The app opens, Kanevas answers with sign-in → the child signs in again → map. B-4.
 - **P-4 — No network.** Launch or navigation fails → E-2 (offline message, retry) → retry reloads the last address. B-6.
 - **P-5 — External link.** A child taps an external link in a sheet → the system browser opens. B-5.
+- **P-6 — Chain build and test.** The chain builds the app and plays unit and UI tests on the bench against Kanevas in
+  stub mode; the run attaches one screenshot per journey P-1 to P-5 (E-1, E-2). Actor: the chain; no screen of its own. B-7.
 
 ## Out of scope
 
 Any native function beyond the shell (offline mode, notifications, editing content); App Store or
 TestFlight distribution; any change to the Kanevas web product (a Kanevas change needed by the app is
-a feature on `AntorFr/kanevas`); iPhone layout; native OIDC flow (see AD-2).
+a feature on `AntorFr/kanevas`); iPhone layout; native OIDC flow (see AD-2); any in-app support for installing or re-signing (sideload is a manual gesture of the parent, AD-7).
