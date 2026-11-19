@@ -9,3 +9,4 @@ The app owns **no business data**: universes, sheets and permissions live in Kan
 | Base URL | build setting `KANEVAS_URL` (Info.plist), default `https://kanevas.berard.me`; overridden by a launch argument in tests | not a secret |
 
 No credential is stored by the app code (no Keychain, no password). Rights: those of the signed-in Kanevas account.
+| Allowed hosts | Info.plist `KanevasAllowedHosts`, default `kanevas.berard.me,auth.berard.me` (Kanevas and its Authelia issuer); overridden by launch argument `-KANEVAS_ALLOWED_HOSTS` in tests | not a secret; the base URL host is always allowed |
