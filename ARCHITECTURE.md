@@ -32,7 +32,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-liens-4 — Opening is injectable.** The system opening goes through a small `URLOpening` protocol (`UIApplication.shared.open` in the app);
   under the UI-test launch argument `-KANEVAS_FAKE_OPENER` the app uses a double that records the URL on screen-less state read by the test through
   an accessibility element (`externalOpenCount`, `lastExternalURL`) in a Debug-only overlay hidden from users, absent from Release.
-  The test page with an external link is served by the harness (local page), not by Kanevas.
+  The test page with an external link is served by the UI test itself (a small loopback HTTP server started in `LinksTests.swift`), not by Kanevas nor by the socle harness.
 - **AD-7 — Distribution.** Sideload, free Apple ID; no signing secret in the repository or the chain. The bench builds for the simulator only.
 - **AD-8 — Deployment.** None on the cluster: the app consumes deployed Kanevas. Nothing goes to `k8s-home-lab`.
 
