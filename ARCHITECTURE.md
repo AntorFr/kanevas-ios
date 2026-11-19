@@ -19,6 +19,20 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   does not run Authelia (Kanevas AD-15, AD-55): an unauthenticated request is redirected to the stub's test-account
   selection, and `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie. P-1 and P-3 are proven
   on that path; P-3 expires the session by clearing the cookies of the WKWebView data store. A real Authelia is not tested by the chain.
+- **AD-liens-1 — The policy is one pure function.** `NavigationPolicy.decide(url:, targetIsNewWindow:, allowedHosts:)` in the SwiftPM
+  package returns `.allowInView`, `.loadInView` (a `target=_blank` / `window.open` request to an allowed host, loaded in the same view) or
+  `.openExternally`. Host match is exact, case-insensitive, on `URL.host`; only `https` (and `http` for a loopback host in a test
+  configuration) is allowed in view; `mailto:`, `tel:` and any other scheme go to the system. A URL without host is never kept in the view.
+  Rejected: suffix matching (`evil-kanevas.example` would pass).
+- **AD-liens-2 — One handler in the composed delegate.** `NavigationPolicyHandler` is the policy handler of the socle's single
+  `WKNavigationDelegate`; it implements `decidePolicyFor navigationAction` (cancel + open externally, or allow) and the `WKUIDelegate`
+  `createWebViewWith` for new-window requests (returns nil, loads allowed URLs in the existing view). It touches no other handler.
+- **AD-liens-3 — Allowed hosts are configuration.** Info.plist key `KanevasAllowedHosts` (Kanevas host and its Authelia host), overridable by
+  launch argument `-KANEVAS_ALLOWED_HOSTS` (comma-separated), like AD-5. The stub host is always allowed in tests because the base URL host is.
+- **AD-liens-4 — Opening is injectable.** The system opening goes through a small `URLOpening` protocol (`UIApplication.shared.open` in the app);
+  under the UI-test launch argument `-KANEVAS_FAKE_OPENER` the app uses a double that records the URL on screen-less state read by the test through
+  an accessibility element (`externalOpenCount`, `lastExternalURL`) in a Debug-only overlay hidden from users, absent from Release.
+  The test page with an external link is served by the harness (local page), not by Kanevas.
 - **AD-7 — Distribution.** Sideload, free Apple ID; no signing secret in the repository or the chain. The bench builds for the simulator only.
 - **AD-8 — Deployment.** None on the cluster: the app consumes deployed Kanevas. Nothing goes to `k8s-home-lab`.
 
