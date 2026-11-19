@@ -1,0 +1,69 @@
+name: Kanevas
+options:
+  bundleIdPrefix: fr.antor
+  deploymentTarget:
+    iOS: "16.0"
+packages:
+  KanevasCore:
+    path: .
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    TARGETED_DEVICE_FAMILY: "2"
+    CODE_SIGNING_ALLOWED: "NO"
+    CODE_SIGNING_REQUIRED: "NO"
+targets:
+  Kanevas:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - package: KanevasCore
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Kanevas
+        KanevasBaseURL: https://kanevas.berard.me
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.antor.kanevas
+  KanevasUnitTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/UnitTests
+        optional: true
+    dependencies:
+      - package: KanevasCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.antor.kanevas.unittests
+        GENERATE_INFOPLIST_FILE: YES
+  KanevasUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Tests/UITests
+        optional: true
+    dependencies:
+      - target: Kanevas
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.antor.kanevas.uitests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Kanevas:
+    build:
+      targets:
+        Kanevas: all
+    test:
+      config: Debug
+      targets:
+        - KanevasUnitTests
+        - KanevasUITests
