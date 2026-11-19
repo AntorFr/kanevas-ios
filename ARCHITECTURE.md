@@ -19,6 +19,18 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   does not run Authelia (Kanevas AD-15, AD-55): an unauthenticated request is redirected to the stub's test-account
   selection, and `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie. P-1 and P-3 are proven
   on that path; P-3 expires the session by clearing the cookies of the WKWebView data store. A real Authelia is not tested by the chain.
+- **AD-socle-1 — One navigation delegate, composed.** The shell owns a single `WKNavigationDelegate` (`NavigationCoordinator`)
+  that forwards each callback to an ordered list of handlers behind one protocol (`NavigationHandler`): `NavigationPolicyHandler`
+  (AD-3) and `FailureHandler` (AD-4), each in its own file, both empty (pass-through) in the skeleton. Later slices fill one
+  handler each and never edit the coordinator. Rejected: subclassing the delegate per slice (slices would edit the same file).
+- **AD-socle-2 — Test harness.** `Tests/UITests/Harness/` starts and stops the Kanevas stub (`node`, `KANEVAS_STUB=1`) on a chosen
+  host and port, at any moment of a test (also after the app has launched). The path of the read-only Kanevas clone comes from
+  the environment variable `KANEVAS_SRC`; nothing of Kanevas is copied into this repository. Missing clone or `node`: bench
+  failure, code 3. `Harness.signIn(account:)` is the sign-in helper (`POST /connexion-bouchon`, `compte=<id>`). Screenshots
+  are attached to the test report (`XCTAttachment`, lifetime `keepAlways`). Stub facts live in `docs/tests.md`.
+- **AD-socle-3 — Layout.** `project.yml` (XcodeGen: app, unit test and UI test targets, iPad only), `Package.swift` (pure logic,
+  `KanevasCore`: base URL resolution), `App/` (SwiftUI shell, `WebView`, handlers), `Tests/`. The base URL is `KanevasBaseURL` in
+  Info.plist; the launch argument `-KANEVAS_URL` wins (AD-5).
 - **AD-7 — Distribution.** Sideload, free Apple ID; no signing secret in the repository or the chain. The bench builds for the simulator only.
 - **AD-8 — Deployment.** None on the cluster: the app consumes deployed Kanevas. Nothing goes to `k8s-home-lab`.
 
