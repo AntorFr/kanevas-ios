@@ -25,7 +25,8 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   handler each and never edit the coordinator. Rejected: subclassing the delegate per slice (slices would edit the same file).
 - **AD-socle-2 — Test harness.** `Tests/UITests/Harness/` starts and stops the Kanevas stub (`node`, `KANEVAS_STUB=1`) on a chosen
   host and port, at any moment of a test (also after the app has launched). The path of the read-only Kanevas clone comes from
-  the environment variable `KANEVAS_SRC`; nothing of Kanevas is copied into this repository. Missing clone or `node`: bench
+  the environment variable `KANEVAS_SRC`; nothing of Kanevas is copied into this repository. If `KANEVAS_SRC` is unset, `Scripts/fetch-kanevas.sh` clones `https://github.com/AntorFr/kanevas` into a folder outside the
+  repository tree and prints its path; the bench needs network, `git` and `node`. Clone or `node` unavailable: bench
   failure, code 3. `Harness.signIn(account:)` is the sign-in helper (`POST /connexion-bouchon`, `compte=<id>`). Screenshots
   are attached to the test report (`XCTAttachment`, lifetime `keepAlways`). Stub facts live in `docs/tests.md`.
 - **AD-socle-3 — Layout.** `project.yml` (XcodeGen: app, unit test and UI test targets, iPad only), `Package.swift` (pure logic,
@@ -36,4 +37,4 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 
 ## Security
 
-Only the HTTPS base URL is loaded (App Transport Security left at default). No JavaScript bridge (`WKScriptMessageHandler`) is exposed.
+Only the HTTPS base URL is loaded: App Transport Security stays at its default in the Release configuration. The Debug configuration, the one the test bench builds, adds `NSAllowsLocalNetworking` only, so the stub can be served over plain HTTP on localhost or a local address; no `NSAllowsArbitraryLoads` anywhere. No JavaScript bridge (`WKScriptMessageHandler`) is exposed.
