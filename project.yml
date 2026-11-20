@@ -33,6 +33,19 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: fr.antor.kanevas
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    postBuildScripts:
+      # Debug only (the bench): plain HTTP to local addresses so the stub can be served; Release keeps ATS at its
+      # default, and NSAllowsArbitraryLoads is never set (ARCHITECTURE.md, Security).
+      - name: ATS local networking (Debug)
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "$CONFIGURATION" = "Debug" ]; then
+            plist="$TARGET_BUILD_DIR/$INFOPLIST_PATH"
+            /usr/libexec/PlistBuddy -c "Delete :NSAppTransportSecurity" "$plist" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" \
+              -c "Add :NSAppTransportSecurity:NSAllowsLocalNetworking bool true" "$plist"
+          fi
   KanevasUnitTests:
     type: bundle.unit-test
     platform: iOS
