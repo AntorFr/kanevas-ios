@@ -19,6 +19,7 @@ struct WebView: UIViewRepresentable {
         configuration.websiteDataStore = .default()
         let view = WKWebView(frame: .zero, configuration: configuration)
         view.navigationDelegate = context.coordinator.navigation
+        view.uiDelegate = context.coordinator.policy
         context.coordinator.observe(view)
         view.load(URLRequest(url: url))
         return view
@@ -27,11 +28,15 @@ struct WebView: UIViewRepresentable {
     func updateUIView(_ view: WKWebView, context: Context) {}
 
     final class Coordinator {
-        let navigation = NavigationCoordinator()
+        let policy = NavigationPolicyHandler()
+        let navigation: NavigationCoordinator
         private let model: WebViewModel
         private var observations: [NSKeyValueObservation] = []
 
-        init(model: WebViewModel) { self.model = model }
+        init(model: WebViewModel) {
+            self.model = model
+            navigation = NavigationCoordinator(handlers: [policy, FailureHandler()])
+        }
 
         func observe(_ view: WKWebView) {
             observations = [
