@@ -10,7 +10,7 @@ final class StubSignInPageUITests: XCTestCase {
         app.launch(pointingAt: stub.baseURL)
 
         let page = app.webViews.staticTexts["Choisir un compte de test"]
-        XCTAssertTrue(page.waitForExistence(timeout: 30), "account choice page not shown")
+        expectInWebView(page, of: app, stub: stub, expecting: "Choisir un compte de test")
         XCTAssertTrue(app.webViews.buttons["Se connecter en tant que Antor"].exists)
         attachScreenshot("account-choice", of: app)
     }
