@@ -17,4 +17,4 @@
 
 Not applicable, with reason: image/Dockerfile, chart, cluster conf (an app does not deploy to the cluster); auth,
 data, secrets (no account or state of its own: the session lives in Kanevas' cookies); stub mode (the stub is Kanevas',
-started by the test harness, next task).
+started by the UI-test harness, see `docs/tests.md`).
