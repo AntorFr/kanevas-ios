@@ -7,7 +7,7 @@ The children's iPad app for Kanevas: a SwiftUI shell around one full-screen `WKW
 
 - `project.yml`: XcodeGen definition (the `.xcodeproj` is generated, never committed).
 - `Sources/KanevasCore`, `Package.swift`: pure logic (base URL resolution, navigation policy).
-- `App/`: the shell (`Views/`, `Navigation/`).
+- `App/`: the shell (`Views/`, `Navigation/`, `Support/` for the system URL opening).
 - `Tests/UnitTests`, `Tests/UITests` (with the Kanevas stub harness).
 
 ## Base URL
@@ -28,8 +28,8 @@ Build and tests run on the bench only (Xcode on a Mac, through the `xcodebuild` 
 xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'
 ```
 
-Unit tests alone: add `-only-testing:KanevasUnitTests`. The UI tests start Kanevas in stub mode themselves
-(needs `node`, `git`, network; see `docs/tests.md`). Bench unreachable: exit code 3, not a red test (that code comes from the bench shim, and from `Scripts/fetch-kanevas.sh` when git, node or network is missing).
+Unit tests alone: add `-only-testing:KanevasUnitTests`. The UI tests start Kanevas in stub mode themselves (except `LinksTests`, which serves its own page;
+the others need `node`, `git`, network; see `docs/tests.md`). Bench unreachable: exit code 3, not a red test (that code comes from the bench shim, and from `Scripts/fetch-kanevas.sh` when git, node or network is missing).
 
 Run the app by hand against the stub: in a clone of `AntorFr/kanevas` with its dependencies installed,
 `KANEVAS_STUB=1 PORT=3055 SESSION_SECRET=0123456789abcdef0123 DB_PATH=/tmp/k.db node --import tsx src/server.ts`, then, on a Mac with XcodeGen,
