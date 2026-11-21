@@ -40,7 +40,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-reseau-2 — `FailureHandler` fills the socle slot and reports through a model.** It implements `didFail` (both callbacks) and `decidePolicy(for: navigationResponse)`
   (main frame only, `isForMainFrame`, `HTTPURLResponse.statusCode`); a 5xx cancels the response (`.cancel`), so the broken page never shows. It writes the state and the failing URL
   (`NSURLErrorFailingURLErrorKey`, else the response URL) into a `ConnectionModel` (`ObservableObject`, `@Published state`, `retryURL`, and `loadURL: ((URL) -> Void)?`). Wiring: `RootView` owns the model
-  (`@StateObject`) and passes it to `WebView(model:)`; `WebView.Coordinator.init` builds `FailureHandler(model:)` and puts it in the handler list of the socle (AD-socle-1); `WebView.makeUIView` sets `model.loadURL` to a closure
+  (`@StateObject`) and passes it to `WebView(url:model:connection:)` (`model:` is the progress `WebViewModel`, `connection:` this one); `WebView.Coordinator.init` builds `FailureHandler(model:)` and puts it in the handler list of the socle (AD-socle-1); `WebView.makeUIView` sets `model.loadURL` to a closure
   that calls `load(URLRequest)` on that `WKWebView`. Two different things are named "coordinator": `NavigationCoordinator` (the socle's delegate, **not edited**) and SwiftUI's `WebView.Coordinator` (owns the delegate and the handler list). The only shared
   edit with the links slice is the handler list in `WebView.Coordinator.init`, one line each (mechanical merge); either slice can land first. AD-socle-1..3 are defined above.
 - **AD-reseau-3 — E-2 is a SwiftUI overlay of `RootView`.** When `ConnectionModel.state == .unreachable`, a view over the web view, full screen, `Color(.systemBackground)`, shows the text
@@ -48,7 +48,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   Retry sets the state back to `.ok`, then calls `model.loadURL(retryURL)` (a `load(URLRequest)`, not `reload()`, which does nothing after a provisional failure; if `retryURL` is nil, the base URL); a new failure shows E-2 again.
 - **AD-reseau-4 — The test proves it against a port that comes alive.** The UI test takes a free loopback port, launches the app with `-KANEVAS_URL http://127.0.0.1:<port>` (nothing listens: connection refused),
   waits for `unreachableMessage` and `retryButton`, attaches capture P-4, starts the stub on that port with the socle harness (AD-socle-2), taps Retry and waits for the stub's account-selection page. HTTP is allowed
-  by the Debug-only `NSAllowsLocalNetworking` that the socle adds (its Security section; the Security section below describes the Release configuration). HTTP ≥ 500 is covered at unit level only.
+  by the Debug-only `NSAllowsLocalNetworking` that the socle adds (its Security section; the Security section below describes the Release configuration). HTTP 500–599 is covered at unit level only.
 - **AD-7 — Distribution.** Sideload, free Apple ID; no signing secret in the repository or the chain. The bench builds for the simulator only.
 - **AD-8 — Deployment.** None on the cluster: the app consumes deployed Kanevas. Nothing goes to `k8s-home-lab`.
 
