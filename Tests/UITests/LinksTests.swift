@@ -37,7 +37,8 @@ final class LinksTests: XCTestCase {
         let blank = app.webViews.links["Lien nouvelle fenêtre"]
         XCTAssertTrue(blank.waitForExistence(timeout: 30))
         blank.tap()
-        XCTAssertTrue(app.webViews.staticTexts["Page suivante"].waitForExistence(timeout: 10))
+        let next = app.webViews.staticTexts["Page suivante"]
+        XCTAssertTrue(next.waitForExistence(timeout: 30), "target page not loaded in the view")
         XCTAssertEqual(app.staticTexts["externalOpenCount"].label, "0")
     }
 }
@@ -73,7 +74,9 @@ private final class LoopbackPageServer {
             while let self, self.running {
                 let client = accept(listener, nil, nil)
                 if client < 0 { break }
-                self.serve(client)
+                // One queue per connection: WebKit may open an idle speculative connection, and a blocking
+                // read on it would starve the request that follows.
+                DispatchQueue.global().async { self.serve(client) }
             }
         }
     }

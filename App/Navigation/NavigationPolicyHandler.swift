@@ -44,7 +44,7 @@ final class NavigationPolicyHandler: NSObject, NavigationHandler, WKUIDelegate {
         case .allowInView, .loadInView:
             if let url { webView.load(URLRequest(url: url)) }
         case .openExternally:
-            if let url { opener.open(url) }
+            if let url, url.scheme?.lowercased() != "about" { opener.open(url) }
         }
         return nil
     }
