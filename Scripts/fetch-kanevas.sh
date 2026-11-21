@@ -1,6 +1,6 @@
 #!/bin/sh
 # Provisions a read-only clone of AntorFr/kanevas OUTSIDE this repository tree and prints its path on stdout
-# (everything else goes to stderr). Used by the UI test harness when KANEVAS_SRC is unset.
+# (everything else goes to stderr). The clone is built (`npm run build`) when dist/public is missing. Used by the UI test harness when KANEVAS_SRC is unset.
 # Needs network, git, node, npm. Any failure exits 3 (bench problem, not a red test).
 set -eu
 
@@ -21,5 +21,10 @@ if [ ! -d "$dest/.git" ]; then
 fi
 if [ ! -d "$dest/node_modules/tsx" ]; then
   (cd "$dest" && npm ci --no-audit --no-fund >&2) || fail "npm ci failed"
+fi
+if [ ! -f "$dest/dist/public/index.html" ]; then
+  # The stub serves the map and the sheets from the web build; without it every page is « Page introuvable. ».
+  (cd "$dest" && npm run build >&2) || fail "npm run build failed"
+  [ -f "$dest/dist/public/index.html" ] || fail "npm run build left no dist/public/index.html"
 fi
 echo "$dest"

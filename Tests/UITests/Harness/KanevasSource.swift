@@ -8,6 +8,9 @@ enum KanevasSource {
             guard FileManager.default.fileExists(atPath: set + "/src/server.ts") else {
                 throw HarnessError("KANEVAS_SRC=\(set) is not a Kanevas clone (src/server.ts missing)")
             }
+            guard FileManager.default.fileExists(atPath: set + "/dist/public/index.html") else {
+                throw HarnessError("KANEVAS_SRC=\(set) has no web build (dist/public/index.html missing): run `npm run build` in it")
+            }
             return set
         }
         let repoRoot = URL(fileURLWithPath: #filePath)   // Tests/UITests/Harness/KanevasSource.swift
