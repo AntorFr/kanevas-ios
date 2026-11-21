@@ -11,13 +11,17 @@ Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` miss
 
 ## Harness (`Tests/UITests/Harness/`)
 
-- `StubServer` starts and stops the stub at any moment of a test, also after the app has launched. Host `127.0.0.1`, port
-  `3055` by default (`KANEVAS_STUB_PORT` overrides). It runs `node --import tsx src/server.ts` in the Kanevas clone with
-  `KANEVAS_STUB=1`, `PORT`, a `DB_PATH` and a `SESSION_SECRET` in a temporary folder: the clone stays read-only, nothing is built in it.
+- `StubServer` starts and stops the stub at any moment of a test, also after the app has launched. Host `127.0.0.1`. `startStub()` picks a
+  free port per test (`StubServer.freePort()`); `KANEVAS_STUB_PORT` forces one (a bare `StubServer()` defaults to `3055`). A port
+  already answering fails the start with a clear message, instead of testing a stub left by a cut run. It runs `node --import tsx src/server.ts` in the Kanevas clone with
+  `KANEVAS_STUB=1`, `PORT`, a `DB_PATH` and a `SESSION_SECRET` (fresh per stub: a session cookie left in the simulator's web view by an earlier test, cookies ignoring the port, no longer verifies) in a temporary folder: the clone stays read-only, nothing is built in it.
   The test process is a simulator process, so children are spawned with `posix_spawn` (`Process` does not exist on iOS).
 - Kanevas clone: `KANEVAS_SRC` (path of a clone with `node_modules` installed), else `Scripts/fetch-kanevas.sh` clones
   `https://github.com/AntorFr/kanevas` (and runs `npm ci`) outside this repository, in `$TMPDIR/kanevas-ios-stub-src`,
   and prints its path. Nothing of Kanevas is committed here.
+- `expectInWebView(_:of:stub:expecting:)` waits for an element of the web view; on failure it attaches `stub.log`, the answer of
+  `GET /connexion-bouchon`, the accessibility hierarchy and a screenshot, and names the cause (stub silent, page served
+  differently, page served but element not found).
 - `XCUIApplication.launch(pointingAt:)` passes `-KANEVAS_URL`; `XCUIApplication.signIn(account:)` taps
   « Se connecter en tant que <Name> » in the web view (the button posts `compte=<id>` to `/connexion-bouchon`);
   `attachScreenshot(_:of:)` joins a capture.
