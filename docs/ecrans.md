@@ -1,5 +1,8 @@
 # Kanevas iOS — screens
 
+> Built so far: E-1 loading and loaded (slice `kanevas-ios-socle`). E-2 and the failure/navigation handlers are
+> still empty pass-throughs (slices `kanevas-ios-hors-reseau`, `kanevas-ios-liens`).
+
 | Id | Screen | Who | What they do |
 |---|---|---|---|
 | E-1 | Kanevas web view (full screen) | child | everything: sign in (Authelia page), map, sheets. All content is Kanevas'; the app draws nothing around it. |

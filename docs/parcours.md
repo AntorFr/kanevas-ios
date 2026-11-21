@@ -37,7 +37,7 @@ journey or screen here and nothing in the app supports it (AD-7).
 - **P-4 — No network.** Launch or navigation fails → E-2 (offline message, retry) → retry reloads the last address. B-6.
 - **P-5 — External link.** A child taps an external link in a sheet → the system browser opens. B-5.
 - **P-6 — Chain build and test.** The chain builds the app and plays unit and UI tests on the bench against Kanevas in
-  stub mode; the run attaches one screenshot per journey P-1 to P-5 (E-1, E-2). Actor: the chain; no screen of its own. B-7.
+  stub mode; the run attaches one screenshot per journey P-1 to P-5 (E-1, E-2). Actor: the chain; no screen of its own. B-7. (Skeleton: one capture, the account choice page; the others come with their slices.)
 
 ## Out of scope
 
