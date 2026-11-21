@@ -24,6 +24,7 @@ targets:
       properties:
         CFBundleDisplayName: Kanevas
         KanevasBaseURL: https://kanevas.berard.me
+        KanevasAllowedHosts: kanevas.berard.me,auth.berard.me
         UILaunchScreen: {}
         UISupportedInterfaceOrientations~ipad:
           - UIInterfaceOrientationPortrait
