@@ -6,6 +6,10 @@
 - **UI** (`KanevasUITests`, iPad simulator): the app launched with `-KANEVAS_URL` against the Kanevas stub; screenshots are
   attached to the report (`XCTAttachment`, `keepAlways`) and land in `.banc/captures/`.
 
+`LinksTests` (UI) serves its own page with an external link from a loopback HTTP server started by the test (no Kanevas stub),
+launches the app with `-KANEVAS_URL` on it and `-KANEVAS_FAKE_OPENER` (Debug double recording the opened URL, read through the
+`externalOpenCount` / `lastExternalURL` accessibility elements), and checks the view stays on its page.
+
 Both play on the bench with `xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`.
 Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` missing: `Scripts/fetch-kanevas.sh` exits 3; the harness then throws and the UI test fails (it is the bench, not the app, that is at fault).
 
