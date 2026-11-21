@@ -11,8 +11,9 @@ final class WebViewModel: ObservableObject {
 struct WebView: UIViewRepresentable {
     let url: URL
     @ObservedObject var model: WebViewModel
+    let connection: ConnectionModel
 
-    func makeCoordinator() -> Coordinator { Coordinator(model: model) }
+    func makeCoordinator() -> Coordinator { Coordinator(model: model, connection: connection) }
 
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -20,6 +21,7 @@ struct WebView: UIViewRepresentable {
         let view = WKWebView(frame: .zero, configuration: configuration)
         view.navigationDelegate = context.coordinator.navigation
         context.coordinator.observe(view)
+        connection.loadURL = { [weak view] in view?.load(URLRequest(url: $0)) }
         view.load(URLRequest(url: url))
         return view
     }
@@ -27,11 +29,14 @@ struct WebView: UIViewRepresentable {
     func updateUIView(_ view: WKWebView, context: Context) {}
 
     final class Coordinator {
-        let navigation = NavigationCoordinator()
+        let navigation: NavigationCoordinator
         private let model: WebViewModel
         private var observations: [NSKeyValueObservation] = []
 
-        init(model: WebViewModel) { self.model = model }
+        init(model: WebViewModel, connection: ConnectionModel) {
+            self.model = model
+            navigation = NavigationCoordinator(handlers: [NavigationPolicyHandler(), FailureHandler(model: connection)])
+        }
 
         func observe(_ view: WKWebView) {
             observations = [
