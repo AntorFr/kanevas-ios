@@ -7,7 +7,7 @@
   attached to the report (`XCTAttachment`, `keepAlways`) and land in `.banc/captures/`.
 
 Both play on the bench with `xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`.
-Bench unreachable, no network, `git`, clone or `node`: code 3 (not a red test).
+Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` missing: `Scripts/fetch-kanevas.sh` exits 3; the harness then throws and the UI test fails (it is the bench, not the app, that is at fault).
 
 ## Harness (`Tests/UITests/Harness/`)
 

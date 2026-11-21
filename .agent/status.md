@@ -11,7 +11,7 @@ Kanevas sous node, test UI de la page de choix de compte avec capture jointe, `d
 
 ## Reste
 
-- Session : connexion, persistance, expiration (`kanevas-ios-session`) ; remplit `Harness.signIn`.
+- Session : connexion, persistance, expiration (`kanevas-ios-session`) ; remplit `XCUIApplication.signIn(account:)`.
 - Liens externes : `NavigationPolicyHandler` (`kanevas-ios-liens`).
 - E-2 et échecs réseau : `FailureHandler` (`kanevas-ios-hors-reseau`).
 - Preuve du socle sur le banc : voir la discussion de la feature ; au passage integrate le banc était injoignable.

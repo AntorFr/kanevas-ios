@@ -15,7 +15,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-4 — Failure handling.** `didFailProvisionalNavigation`/`didFail` and HTTP ≥ 500 on the main frame show E-2 (B-6); Retry reloads the last URL.
 - **AD-5 — Base URL is configuration**, read from Info.plist, overridable by launch argument `-KANEVAS_URL` so UI tests point at the stub.
 - **AD-6 — Tests.** Unit tests (XCTest) on the navigation policy and error mapping (pure functions). UI tests on an iPad simulator:
-  Kanevas in stub mode (`KANEVAS_STUB=1`, node only) is started on the bench and the app pointed at it; they cover P-1 to P-5 and attach screenshots. The stub
+  Kanevas in stub mode (`KANEVAS_STUB=1`, node only) is started on the bench and the app pointed at it; they cover P-1 to P-5 and attach screenshots (target; the skeleton plays the unit test of the base URL and two UI tests: harness and account choice page). The stub
   does not run Authelia (Kanevas AD-15, AD-55): an unauthenticated request is redirected to the stub's test-account
   selection, and `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie. P-1 and P-3 are proven
   on that path; P-3 expires the session by clearing the cookies of the WKWebView data store. A real Authelia is not tested by the chain.
@@ -27,7 +27,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   host and port, at any moment of a test (also after the app has launched). The path of the read-only Kanevas clone comes from
   the environment variable `KANEVAS_SRC`; nothing of Kanevas is copied into this repository. If `KANEVAS_SRC` is unset, `Scripts/fetch-kanevas.sh` clones `https://github.com/AntorFr/kanevas` into a folder outside the
   repository tree and prints its path; the bench needs network, `git` and `node`. Clone or `node` unavailable: bench
-  failure, code 3. `Harness.signIn(account:)` is the sign-in helper (`POST /connexion-bouchon`, `compte=<id>`). Screenshots
+  failure, code 3. `XCUIApplication.signIn(account:)` is the sign-in helper (`POST /connexion-bouchon`, `compte=<id>`). Screenshots
   are attached to the test report (`XCTAttachment`, lifetime `keepAlways`). Stub facts live in `docs/tests.md`.
 - **AD-socle-3 — Layout.** `project.yml` (XcodeGen: app, unit test and UI test targets, iPad only), `Package.swift` (pure logic,
   `KanevasCore`: base URL resolution), `App/` (SwiftUI shell, `WebView`, handlers), `Tests/`. The base URL is `KanevasBaseURL` in
