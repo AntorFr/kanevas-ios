@@ -5,7 +5,7 @@ final class StubHarnessUITests: XCTestCase {
 
     /// The stub can start after the app has launched, on the targeted port, and stops on demand.
     func testStubStartsAfterAppLaunch() throws {
-        let stub = StubServer()
+        let stub = StubServer(port: ProcessInfo.processInfo.environment["KANEVAS_STUB_PORT"].flatMap { Int($0) } ?? StubServer.freePort() ?? StubServer.defaultPort)
         addTeardownBlock { stub.stop() }
         XCTAssertFalse(stub.isAnswering(), "port \(stub.port) already served before the test")
 
