@@ -5,7 +5,7 @@
 - The Xcode project is generated: `project.yml` (XcodeGen) is committed, `*.xcodeproj` never.
   Pure logic lives in the SwiftPM package `KanevasCore` (`Sources/KanevasCore`); the SwiftUI shell in `App/`.
 - Build and test on the bench only, with `xcodebuild` (the pod side of the bench, codes 0–4; code 3 = bench unreachable,
-  not a red test): `xcodegen generate && xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`.
+  not a red test): `xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`.
   Local level (`tests.local`): unit tests only (`-only-testing:KanevasUnitTests`).
 - Proof of test: `attester` plays the suite `.sdlc.yaml` declares; `attester --publier` posts `tests-complets` when green.
 - One `WKNavigationDelegate` (`NavigationCoordinator`) composes the handlers; a slice fills its handler, never the coordinator.
