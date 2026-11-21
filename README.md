@@ -26,7 +26,7 @@ Unit tests alone: add `-only-testing:KanevasUnitTests`. The UI tests start Kanev
 (needs `node`, `git`, network; see `docs/tests.md`). Bench unreachable: exit code 3, not a red test (that code comes from the bench shim, and from `Scripts/fetch-kanevas.sh` when git, node or network is missing).
 
 Run the app by hand against the stub: in a clone of `AntorFr/kanevas` with its dependencies installed,
-`KANEVAS_STUB=1 PORT=3055 SESSION_SECRET=x DB_PATH=/tmp/k.db node --import tsx src/server.ts`, then, on a Mac with XcodeGen,
+`KANEVAS_STUB=1 PORT=3055 SESSION_SECRET=0123456789abcdef0123 DB_PATH=/tmp/k.db node --import tsx src/server.ts`, then, on a Mac with XcodeGen,
 `xcodegen generate`, open `Kanevas.xcodeproj`, and add `-KANEVAS_URL http://127.0.0.1:3055` to the `Kanevas` scheme
 (Run > Arguments) before running on an iPad simulator.
 
