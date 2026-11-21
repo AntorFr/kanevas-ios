@@ -26,7 +26,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   Rejected: suffix matching (`evil-kanevas.example` would pass).
 - **AD-liens-2 — One handler in the composed delegate.** `NavigationPolicyHandler` is the policy handler of the socle's single
   `WKNavigationDelegate`; it implements `decidePolicyFor navigationAction` (cancel + open externally, or allow) and the `WKUIDelegate`
-  `createWebViewWith` for new-window requests (returns nil, loads allowed URLs in the existing view). It touches no other handler.
+  `createWebViewWith` for new-window requests (returns nil, loads allowed URLs in the existing view, ignores `about:` URLs). It touches no other handler.
 - **AD-liens-3 — Allowed hosts are configuration.** Info.plist key `KanevasAllowedHosts` (default `kanevas.berard.me,auth.berard.me`: Kanevas and its Authelia issuer `https://auth.berard.me`, the `OIDC_ISSUER` of Kanevas itself), overridable by
   launch argument `-KANEVAS_ALLOWED_HOSTS` (comma-separated), like AD-5. The base URL host is always allowed too (so the UI tests, which point `-KANEVAS_URL` at a loopback server, need no extra argument); a port is never part of the match.
 - **AD-liens-4 — Opening is injectable.** The system opening goes through a small `URLOpening` protocol (`UIApplication.shared.open` in the app);
