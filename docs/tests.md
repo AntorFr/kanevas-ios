@@ -42,3 +42,12 @@ Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` miss
   map `/univers/:id/cartes/:cid` (list `/univers/:id/cartes`), sheet `/univers/:id/fiche/:fid`,
   sheet list by type `/univers/:id/fiches/:type`. The lore of a sheet is read through `GET /api/univers/:id/fiches/...`.
 - **Session expiry**: the session is a signed cookie; the tests expire it by clearing the cookies of the WKWebView data store.
+
+## Finding (task `kanevas-ios-session-parcours`)
+
+Played on the bench: sign-in works (`POST /connexion-bouchon`, the session is accepted), and `SessionReset`
+(`-KANEVAS_CLEAR_SESSION`) clears the store, so the simulator cookie jar no longer leaks between tests. But after sign-in the
+stub answers `/` with « Page introuvable. »: the clone has no `dist/public` build, so neither the map nor a character sheet is
+served. P-1 (map), P-2 (sheet lore) and the return to the map of P-3 cannot be observed in the web content. This is a fact of the
+stub (Kanevas `dist/public` not built by `Scripts/fetch-kanevas.sh` / not present in `KANEVAS_SRC`), not of the shell; the app is not
+worked around. Needed: a Kanevas clone with the web build (`npm run build`) on the bench, or a stub route for the map and a sheet.

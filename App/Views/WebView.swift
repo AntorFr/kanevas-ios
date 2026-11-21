@@ -20,7 +20,14 @@ struct WebView: UIViewRepresentable {
         let view = WKWebView(frame: .zero, configuration: configuration)
         view.navigationDelegate = context.coordinator.navigation
         context.coordinator.observe(view)
-        view.load(URLRequest(url: url))
+        let request = URLRequest(url: url)
+        #if DEBUG
+        if SessionReset.requested() {
+            SessionReset.clear { view.load(request) }
+            return view
+        }
+        #endif
+        view.load(request)
         return view
     }
 
