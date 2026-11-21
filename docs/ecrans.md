@@ -1,7 +1,7 @@
 # Kanevas iOS — screens
 
-> Built so far: E-1 loading and loaded (slice `kanevas-ios-socle`), E-2 (slice `kanevas-ios-hors-reseau`). The navigation-policy handler is
-> still an empty pass-through (slice `kanevas-ios-liens`).
+> Built so far: E-1 loading and loaded (slice `kanevas-ios-socle`). E-2 and the failure/navigation handlers are
+> still empty pass-throughs (slices `kanevas-ios-hors-reseau`, `kanevas-ios-liens`).
 
 | Id | Screen | Who | What they do |
 |---|---|---|---|
