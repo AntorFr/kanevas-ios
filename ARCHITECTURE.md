@@ -15,13 +15,13 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-4 — Failure handling.** `didFailProvisionalNavigation`/`didFail` and HTTP ≥ 500 on the main frame show E-2 (B-6); Retry reloads the last URL.
 - **AD-5 — Base URL is configuration**, read from Info.plist, overridable by launch argument `-KANEVAS_URL` so UI tests point at the stub.
 - **AD-6 — Tests.** Unit tests (XCTest) on the navigation policy and error mapping (pure functions). UI tests on an iPad simulator:
-  Kanevas in stub mode (`KANEVAS_STUB=1`, node only) is started on the bench and the app pointed at it; they cover P-1 to P-5 and attach screenshots (target; the skeleton plays the unit test of the base URL and two UI tests: harness and account choice page). The stub
+  Kanevas in stub mode (`KANEVAS_STUB=1`, node only) is started on the bench and the app pointed at it; they cover P-1 to P-5 and attach screenshots (target; built so far: unit tests of the base URL and of the failure mapping, UI tests of the harness, the account choice page and P-4 offline/Retry). The stub
   does not run Authelia (Kanevas AD-15, AD-55): an unauthenticated request is redirected to the stub's test-account
   selection, and `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie. P-1 and P-3 are proven
   on that path; P-3 expires the session by clearing the cookies of the WKWebView data store. A real Authelia is not tested by the chain.
 - **AD-socle-1 — One navigation delegate, composed.** The shell owns a single `WKNavigationDelegate` (`NavigationCoordinator`)
   that forwards each callback to an ordered list of handlers behind one protocol (`NavigationHandler`): `NavigationPolicyHandler`
-  (AD-3) and `FailureHandler` (AD-4), each in its own file, both empty (pass-through) in the skeleton. Later slices fill one
+  (AD-3) and `FailureHandler` (AD-4), each in its own file. `FailureHandler` is filled (AD-reseau-2); `NavigationPolicyHandler` is still an empty pass-through (links slice). Slices fill one
   handler each and never edit the coordinator. Rejected: subclassing the delegate per slice (slices would edit the same file).
 - **AD-socle-2 — Test harness.** `Tests/UITests/Harness/` starts and stops the Kanevas stub (`node`, `KANEVAS_STUB=1`) on a chosen
   host and port, at any moment of a test (also after the app has launched). The path of the read-only Kanevas clone comes from
@@ -40,9 +40,9 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-reseau-2 — `FailureHandler` fills the socle slot and reports through a model.** It implements `didFail` (both callbacks) and `decidePolicy(for: navigationResponse)`
   (main frame only, `isForMainFrame`, `HTTPURLResponse.statusCode`); a 5xx cancels the response (`.cancel`), so the broken page never shows. It writes the state and the failing URL
   (`NSURLErrorFailingURLErrorKey`, else the response URL) into a `ConnectionModel` (`ObservableObject`, `@Published state`, `retryURL`, and `loadURL: ((URL) -> Void)?`). Wiring: `RootView` owns the model
-  (`@StateObject`) and passes it to `WebView(model:)`; `WebView.makeUIView` builds `FailureHandler(model:)`, puts it in the handler list of the socle (AD-socle-1) and sets `model.loadURL` to a closure
-  that calls `load(URLRequest)` on that `WKWebView`. Two different things are named "coordinator": `NavigationCoordinator` (the socle's delegate, **not edited**) and SwiftUI's `WebView.Coordinator` (not needed here). The only shared
-  edit with the links slice is the handler list in `WebView.swift`, one line each (mechanical merge); either slice can land first. AD-socle-1..3 are defined above.
+  (`@StateObject`) and passes it to `WebView(model:)`; `WebView.Coordinator.init` builds `FailureHandler(model:)` and puts it in the handler list of the socle (AD-socle-1); `WebView.makeUIView` sets `model.loadURL` to a closure
+  that calls `load(URLRequest)` on that `WKWebView`. Two different things are named "coordinator": `NavigationCoordinator` (the socle's delegate, **not edited**) and SwiftUI's `WebView.Coordinator` (owns the delegate and the handler list). The only shared
+  edit with the links slice is the handler list in `WebView.Coordinator.init`, one line each (mechanical merge); either slice can land first. AD-socle-1..3 are defined above.
 - **AD-reseau-3 — E-2 is a SwiftUI overlay of `RootView`.** When `ConnectionModel.state == .unreachable`, a view over the web view, full screen, `Color(.systemBackground)`, shows the text
   "Kanevas is unreachable" (`unreachableMessage`) and a `Button("Retry")` (`retryButton`), system components and system text styles only, no image, no chrome, centred, any orientation, light and dark by the system.
   Retry sets the state back to `.ok`, then calls `model.loadURL(retryURL)` (a `load(URLRequest)`, not `reload()`, which does nothing after a provisional failure; if `retryURL` is nil, the base URL); a new failure shows E-2 again.
