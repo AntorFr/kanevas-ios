@@ -14,10 +14,10 @@ bouchon, diagnostic joint à l'échec (`expectInWebView`).
 
 ## Reste
 
-- Session : connexion, persistance, expiration (`kanevas-ios-session`) ; remplit `XCUIApplication.signIn(account:)`.
+- Session : connexion, persistance, expiration (`kanevas-ios-session`) ; s'appuie sur `XCUIApplication.signIn(account:)` (déjà écrit dans le harnais, aucun test ne l'appelle encore).
 - Liens externes : `NavigationPolicyHandler` (`kanevas-ios-liens`).
 - E-2 et échecs réseau : `FailureHandler` (`kanevas-ios-hors-reseau`).
-- Preuve de la suite entière : jouée par `attester` avant la recette ; `StubSignInPageUITests` est vert 3/3 sur le banc (feature `rouge-kanevas-ios-1`).
+- Preuve de la suite entière : jouée par `attester` avant la recette ; `testAppShowsAccountChoicePage` (StubSignInPageUITests) rejoué 3 fois de suite, vert, sur le banc (feature `rouge-kanevas-ios-1`).
 
 ## Pièges
 
