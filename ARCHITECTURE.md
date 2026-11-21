@@ -15,10 +15,23 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-4 — Failure handling.** `didFailProvisionalNavigation`/`didFail` and HTTP ≥ 500 on the main frame show E-2 (B-6); Retry reloads the last URL.
 - **AD-5 — Base URL is configuration**, read from Info.plist, overridable by launch argument `-KANEVAS_URL` so UI tests point at the stub.
 - **AD-6 — Tests.** Unit tests (XCTest) on the navigation policy and error mapping (pure functions). UI tests on an iPad simulator:
-  Kanevas in stub mode (`KANEVAS_STUB=1`, node only) is started on the bench and the app pointed at it; they cover P-1 to P-5 and attach screenshots. The stub
+  Kanevas in stub mode (`KANEVAS_STUB=1`, node only) is started on the bench and the app pointed at it; they cover P-1 to P-5 and attach screenshots (target; the skeleton plays the unit test of the base URL and two UI tests: harness and account choice page). The stub
   does not run Authelia (Kanevas AD-15, AD-55): an unauthenticated request is redirected to the stub's test-account
   selection, and `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie. P-1 and P-3 are proven
   on that path; P-3 expires the session by clearing the cookies of the WKWebView data store. A real Authelia is not tested by the chain.
+- **AD-socle-1 — One navigation delegate, composed.** The shell owns a single `WKNavigationDelegate` (`NavigationCoordinator`)
+  that forwards each callback to an ordered list of handlers behind one protocol (`NavigationHandler`): `NavigationPolicyHandler`
+  (AD-3) and `FailureHandler` (AD-4), each in its own file, both empty (pass-through) in the skeleton. Later slices fill one
+  handler each and never edit the coordinator. Rejected: subclassing the delegate per slice (slices would edit the same file).
+- **AD-socle-2 — Test harness.** `Tests/UITests/Harness/` starts and stops the Kanevas stub (`node`, `KANEVAS_STUB=1`) on a chosen
+  host and port, at any moment of a test (also after the app has launched). The path of the read-only Kanevas clone comes from
+  the environment variable `KANEVAS_SRC`; nothing of Kanevas is copied into this repository. If `KANEVAS_SRC` is unset, `Scripts/fetch-kanevas.sh` clones `https://github.com/AntorFr/kanevas` into a folder outside the
+  repository tree and prints its path; the bench needs network, `git` and `node`. Clone or `node` unavailable: bench
+  failure, code 3. `XCUIApplication.signIn(account:)` is the sign-in helper (`POST /connexion-bouchon`, `compte=<id>`). Screenshots
+  are attached to the test report (`XCTAttachment`, lifetime `keepAlways`). Stub facts live in `docs/tests.md`.
+- **AD-socle-3 — Layout.** `project.yml` (XcodeGen: app, unit test and UI test targets, iPad only), `Package.swift` (pure logic,
+  `KanevasCore`: base URL resolution), `App/` (SwiftUI shell, `WebView`, handlers), `Tests/`. The base URL is `KanevasBaseURL` in
+  Info.plist; the launch argument `-KANEVAS_URL` wins (AD-5).
 - **AD-reseau-1 — Failure mapping is pure.** `FailureMapping` in the SwiftPM package (`KanevasCore`) maps a navigation outcome to `ConnectionState` (`.ok`, `.unreachable`):
   `state(forError:)` gives `.unreachable` for any error of `NSURLErrorDomain` (offline, host not found, cannot connect, timeout, TLS failure…) and `.ok` for the two
   non-failures — `NSURLErrorCancelled` and `WebKitErrorDomain` 102 (frame load interrupted), which a cancelled navigation produces, e.g. an external link handed to the system browser (B-5) or a download;
@@ -29,7 +42,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   (`NSURLErrorFailingURLErrorKey`, else the response URL) into a `ConnectionModel` (`ObservableObject`, `@Published state`, `retryURL`, and `loadURL: ((URL) -> Void)?`). Wiring: `RootView` owns the model
   (`@StateObject`) and passes it to `WebView(model:)`; `WebView.makeUIView` builds `FailureHandler(model:)`, puts it in the handler list of the socle (AD-socle-1) and sets `model.loadURL` to a closure
   that calls `load(URLRequest)` on that `WKWebView`. Two different things are named "coordinator": `NavigationCoordinator` (the socle's delegate, **not edited**) and SwiftUI's `WebView.Coordinator` (not needed here). The only shared
-  edit with the links slice is the handler list in `WebView.swift`, one line each (mechanical merge); either slice can land first. AD-socle-1..3 and the Debug-only ATS exception are defined in `ARCHITECTURE.md` of the socle branch, which this slice depends on.
+  edit with the links slice is the handler list in `WebView.swift`, one line each (mechanical merge); either slice can land first. AD-socle-1..3 are defined above.
 - **AD-reseau-3 — E-2 is a SwiftUI overlay of `RootView`.** When `ConnectionModel.state == .unreachable`, a view over the web view, full screen, `Color(.systemBackground)`, shows the text
   "Kanevas is unreachable" (`unreachableMessage`) and a `Button("Retry")` (`retryButton`), system components and system text styles only, no image, no chrome, centred, any orientation, light and dark by the system.
   Retry sets the state back to `.ok`, then calls `model.loadURL(retryURL)` (a `load(URLRequest)`, not `reload()`, which does nothing after a provisional failure; if `retryURL` is nil, the base URL); a new failure shows E-2 again.
@@ -41,4 +54,4 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 
 ## Security
 
-Only the HTTPS base URL is loaded (App Transport Security left at default). No JavaScript bridge (`WKScriptMessageHandler`) is exposed.
+Only the HTTPS base URL is loaded: App Transport Security stays at its default in the Release configuration. The Debug configuration, the one the test bench builds, adds `NSAllowsLocalNetworking` only, so the stub can be served over plain HTTP on localhost or a local address; no `NSAllowsArbitraryLoads` anywhere. No JavaScript bridge (`WKScriptMessageHandler`) is exposed.
