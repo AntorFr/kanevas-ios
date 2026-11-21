@@ -1,8 +1,8 @@
 tests:
   banc: true
-  commande: xcodegen generate && xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'
+  commande: xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'
   # local: unit tests only (the UI tests, which boot a simulator, are the slow class)
-  local: xcodegen generate && xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad' -only-testing:KanevasUnitTests
+  local: xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad' -only-testing:KanevasUnitTests
   rapport: .banc/rapport-tests/junit.xml
   format: junit
 ecrans:
