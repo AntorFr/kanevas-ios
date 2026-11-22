@@ -6,6 +6,8 @@
 - **UI** (`KanevasUITests`, iPad simulator): the app launched with `-KANEVAS_URL` against the Kanevas stub; screenshots are
   attached to the report (`XCTAttachment`, `keepAlways`) and land in `.banc/captures/`.
 
+`UnreachableStatesTests` (UI) starts a loopback `StatusServer` (`Tests/UITests/Harness/StatusServer.swift`, no `node`, no Kanevas stub) that answers a chosen HTTP status or cuts the connection, and checks E-2, Retry and that a 404 stays on its page.
+
 `LinksTests` (UI) serves its own page with an external link from a loopback HTTP server started by the test (no Kanevas stub),
 launches the app with `-KANEVAS_URL` on it and `-KANEVAS_FAKE_OPENER` (Debug double recording the opened URL, read through the
 `externalOpenCount` / `lastExternalURL` accessibility elements), and checks the view stays on its page.

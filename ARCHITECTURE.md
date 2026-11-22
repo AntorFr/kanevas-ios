@@ -61,7 +61,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   Retry sets the state back to `.ok`, then calls `model.loadURL(retryURL)` (a `load(URLRequest)`, not `reload()`, which does nothing after a provisional failure; if `retryURL` is nil, the base URL); a new failure shows E-2 again.
 - **AD-reseau-4 — The test proves it against a port that comes alive.** The UI test takes a free loopback port, launches the app with `-KANEVAS_URL http://127.0.0.1:<port>` (nothing listens: connection refused),
   waits for `unreachableMessage` and `retryButton`, attaches capture P-4, starts the stub on that port with the socle harness (AD-socle-2), taps Retry and waits for the stub's account-selection page. HTTP is allowed
-  by the Debug-only `NSAllowsLocalNetworking` that the socle adds (its Security section; the Security section below describes the Release configuration). HTTP 500–599 is covered at unit level only.
+  by the Debug-only `NSAllowsLocalNetworking` that the socle adds (its Security section; the Security section below describes the Release configuration). HTTP 500–599 is covered at unit level (`FailureMappingTests`) and in UI by `UnreachableStatesTests` (503 then Retry, 404 stays on the page, Retry while the server is still down, cut after a page was read, largest system text size), which serves its status codes from `StatusServer` (loopback, no Kanevas stub).
 - **AD-7 — Distribution.** Sideload, free Apple ID; no signing secret in the repository or the chain. The bench builds for the simulator only.
 - **AD-8 — Deployment.** None on the cluster: the app consumes deployed Kanevas. Nothing goes to `k8s-home-lab`.
 

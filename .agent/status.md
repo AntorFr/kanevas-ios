@@ -6,7 +6,7 @@
 
 Socle livré (feature `kanevas-ios-socle`) : projet XcodeGen, paquet `KanevasCore` (URL de base, `-KANEVAS_URL` prioritaire),
 coque SwiftUI avec WKWebView plein écran et barre de progression (E-1 chargé), `NavigationCoordinator` unique composant
-`NavigationPolicyHandler` (vide) et `FailureHandler`, harnais des tests UI (`Tests/UITests/Harness/`) qui lance le bouchon
+`NavigationPolicyHandler` et `FailureHandler` (vides à l'origine, remplis par les features suivantes), harnais des tests UI (`Tests/UITests/Harness/`) qui lance le bouchon
 Kanevas sous node, test UI de la page de choix de compte avec capture jointe, `docs/tests.md` (faits du bouchon).
 
 Liens externes livrés (feature `kanevas-ios-liens`) : `NavigationPolicy.decide` (fonction pure, hôtes exacts), `NavigationPolicyHandler`
@@ -19,7 +19,7 @@ bouchon, diagnostic joint à l'échec (`expectInWebView`).
 Hors réseau livré (feature `kanevas-ios-hors-reseau`, P-4, B-6) : `FailureMapping` (KanevasCore) range les erreurs `NSURLErrorDomain`
 (hors annulation) et les HTTP 500–599 en `.unreachable` ; `FailureHandler` le dit à `ConnectionModel` ; `RootView` affiche E-2
 (`UnreachableView`, « Kanevas is unreachable », « Retry ») ; Retry recharge l'adresse en échec par `load(URLRequest)`.
-Tests : `FailureMappingTests` (unitaire), `OfflineTests` (UI, port qui s'éveille, capture P-4).
+Tests : `FailureMappingTests` (unitaire), `OfflineTests` (UI, port qui s'éveille, capture P-4), `UnreachableStatesTests` (UI, `StatusServer` local : 5xx, 404, Retry en échec, coupure après lecture, grand texte).
 
 ## Reste
 
