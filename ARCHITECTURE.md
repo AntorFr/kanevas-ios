@@ -15,7 +15,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-4 — Failure handling.** `didFailProvisionalNavigation`/`didFail` and HTTP ≥ 500 on the main frame show E-2 (B-6); Retry reloads the last URL.
 - **AD-5 — Base URL is configuration**, read from Info.plist, overridable by launch argument `-KANEVAS_URL` so UI tests point at the stub.
 - **AD-6 — Tests.** Unit tests (XCTest) on the navigation policy and error mapping (pure functions). UI tests on an iPad simulator:
-  Kanevas in stub mode (`KANEVAS_STUB=1`, node only) is started on the bench and the app pointed at it; they cover P-1 to P-5 and attach screenshots (target; the skeleton plays the unit test of the base URL and two UI tests: harness and account choice page). The stub
+  Kanevas in stub mode (`KANEVAS_STUB=1`, node only) is started on the bench and the app pointed at it; they cover P-1 to P-5 and attach screenshots (target; built so far: unit tests of the base URL and of the navigation policy, UI tests for the harness, the account choice page, external links, P-4 offline/Retry and the 5xx/4xx bounds of E-2). The stub
   does not run Authelia (Kanevas AD-15, AD-55): an unauthenticated request is redirected to the stub's test-account
   selection, and `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie. P-1 and P-3 are proven
   on that path; P-3 expires the session by clearing the cookies of the WKWebView data store. A real Authelia is not tested by the chain.
@@ -33,9 +33,23 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   start, `signIn(account:)`, screenshots). Observation is by reading elements of the web content (account choice page, map,
   sheet title/lore text), never by pixels. Return to the target page after sign-in (B-4) is the stub redirect's behaviour; the
   test asserts the map is shown again, the default target.
+- **AD-liens-1 — The policy is one pure function.** `NavigationPolicy.decide(url:, targetIsNewWindow:, allowedHosts:)` in the SwiftPM
+  package returns `.allowInView`, `.loadInView` (a `target=_blank` / `window.open` request to an allowed host, loaded in the same view) or
+  `.openExternally`. Host match is exact, case-insensitive, on `URL.host`; only `https` (and `http` for a loopback host, in any build, if the host is allowed)
+  is allowed in view; `mailto:`, `tel:` and any other scheme go to the system. A URL without host is never kept in the view.
+  Rejected: suffix matching (`evil-kanevas.example` would pass).
+- **AD-liens-2 — One handler in the composed delegate.** `NavigationPolicyHandler` is the policy handler of the socle's single
+  `WKNavigationDelegate`; it implements `decidePolicyFor navigationAction` (cancel + open externally, or allow) and the `WKUIDelegate`
+  `createWebViewWith` for new-window requests (returns nil, loads allowed URLs in the existing view, ignores `about:` URLs). It touches no other handler.
+- **AD-liens-3 — Allowed hosts are configuration.** Info.plist key `KanevasAllowedHosts` (default `kanevas.berard.me,auth.berard.me`: Kanevas and its Authelia issuer `https://auth.berard.me`, the `OIDC_ISSUER` of Kanevas itself), overridable by
+  launch argument `-KANEVAS_ALLOWED_HOSTS` (comma-separated), like AD-5. The base URL host is always allowed too (so the UI tests, which point `-KANEVAS_URL` at a loopback server, need no extra argument); a port is never part of the match.
+- **AD-liens-4 — Opening is injectable.** The system opening goes through a small `URLOpening` protocol (`UIApplication.shared.open` in the app);
+  under the UI-test launch argument `-KANEVAS_FAKE_OPENER` the app uses a double that records the URL on screen-less state read by the test through
+  an accessibility element (`externalOpenCount`, `lastExternalURL`) in a Debug-only overlay hidden from users, absent from Release.
+  The test page with an external link is served by the UI test itself (a small loopback HTTP server started in `LinksTests.swift`), not by Kanevas nor by the socle harness.
 - **AD-socle-1 — One navigation delegate, composed.** The shell owns a single `WKNavigationDelegate` (`NavigationCoordinator`)
   that forwards each callback to an ordered list of handlers behind one protocol (`NavigationHandler`): `NavigationPolicyHandler`
-  (AD-3) and `FailureHandler` (AD-4), each in its own file, both empty (pass-through) in the skeleton. Later slices fill one
+  (AD-3) and `FailureHandler` (AD-4), each in its own file; both are filled (AD-liens-2, AD-reseau-2). Later slices fill one
   handler each and never edit the coordinator. Rejected: subclassing the delegate per slice (slices would edit the same file).
 - **AD-socle-2 — Test harness.** `Tests/UITests/Harness/` starts and stops the Kanevas stub (`node`, `KANEVAS_STUB=1`) on a chosen
   host and port, at any moment of a test (also after the app has launched). The path of the read-only Kanevas clone comes from
@@ -46,6 +60,22 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-socle-3 — Layout.** `project.yml` (XcodeGen: app, unit test and UI test targets, iPad only), `Package.swift` (pure logic,
   `KanevasCore`: base URL resolution), `App/` (SwiftUI shell, `WebView`, handlers), `Tests/`. The base URL is `KanevasBaseURL` in
   Info.plist; the launch argument `-KANEVAS_URL` wins (AD-5).
+- **AD-reseau-1 — Failure mapping is pure.** `FailureMapping` in the SwiftPM package (`KanevasCore`) maps a navigation outcome to `ConnectionState` (`.ok`, `.unreachable`):
+  `state(forError:)` gives `.unreachable` for any error of `NSURLErrorDomain` (offline, host not found, cannot connect, timeout, TLS failure…) and `.ok` for the two
+  non-failures — `NSURLErrorCancelled` and `WebKitErrorDomain` 102 (frame load interrupted), which a cancelled navigation produces, e.g. an external link handed to the system browser (B-5) or a download;
+  `state(forHTTPStatus:)` gives `.unreachable` for 500…599 and `.ok` below. Other 4xx pages (login, 404) are Kanevas' own and stay in the view. Rejected: treating every error alike
+  (an external link would flash E-2).
+- **AD-reseau-2 — `FailureHandler` fills the socle slot and reports through a model.** It implements `didFail` (both callbacks) and `decidePolicy(for: navigationResponse)`
+  (main frame only, `isForMainFrame`, `HTTPURLResponse.statusCode`); a 5xx cancels the response (`.cancel`), so the broken page never shows. It writes the state and the failing URL
+  (`NSURLErrorFailingURLErrorKey`, else the response URL) into a `ConnectionModel` (`ObservableObject`, `@Published state`, `retryURL`, and `loadURL: ((URL) -> Void)?`). Wiring: `RootView` owns the model
+  (`@StateObject`) and passes it to `WebView(url:model:connection:)` (`model:` is the progress `WebViewModel`, `connection:` this one); `WebView.Coordinator.init` builds `FailureHandler(model:)` and puts it in the handler list of the socle (AD-socle-1); `WebView.makeUIView` sets `model.loadURL` to a closure
+  that calls `load(URLRequest)` on that `WKWebView`. Two different things are named "coordinator": `NavigationCoordinator` (the socle's delegate, **not edited**) and SwiftUI's `WebView.Coordinator` (owns the delegate and the handler list). The handler list in `WebView.Coordinator.init` is `[policy, FailureHandler(model:)]`, `policy` being the `NavigationPolicyHandler` that is also the web view's `uiDelegate` (AD-liens-2). AD-socle-1..3 are defined above.
+- **AD-reseau-3 — E-2 is a SwiftUI overlay of `RootView`.** When `ConnectionModel.state == .unreachable`, a view over the web view, full screen, `Color(.systemBackground)`, shows the text
+  "Kanevas is unreachable" (`unreachableMessage`) and a `Button("Retry")` (`retryButton`), system components and system text styles only, no image, no chrome, centred, any orientation, light and dark by the system.
+  Retry sets the state back to `.ok`, then calls `model.loadURL(retryURL)` (a `load(URLRequest)`, not `reload()`, which does nothing after a provisional failure; if `retryURL` is nil, the base URL); a new failure shows E-2 again.
+- **AD-reseau-4 — The test proves it against a port that comes alive.** The UI test takes a free loopback port, launches the app with `-KANEVAS_URL http://127.0.0.1:<port>` (nothing listens: connection refused),
+  waits for `unreachableMessage` and `retryButton`, attaches capture P-4, starts the stub on that port with the socle harness (AD-socle-2), taps Retry and waits for the stub's account-selection page. HTTP is allowed
+  by the Debug-only `NSAllowsLocalNetworking` that the socle adds (its Security section; the Security section below describes the Release configuration). HTTP 500–599 is covered at unit level (`FailureMappingTests`) and in UI by `UnreachableStatesTests` (503 then Retry, 404 stays on the page, Retry while the server is still down, cut after a page was read, largest system text size), which serves its status codes from `StatusServer` (loopback, no Kanevas stub, always answers). `UnreachableBoundariesTests` covers the 5xx/4xx bounds, a connection cut with no answer, Retry on the failed address and sub-resource errors with its own private loopback `RouteServer`.
 - **AD-7 — Distribution.** Sideload, free Apple ID; no signing secret in the repository or the chain. The bench builds for the simulator only.
 - **AD-8 — Deployment.** None on the cluster: the app consumes deployed Kanevas. Nothing goes to `k8s-home-lab`.
 

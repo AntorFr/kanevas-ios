@@ -6,18 +6,33 @@
 - **UI** (`KanevasUITests`, iPad simulator): the app launched with `-KANEVAS_URL` against the Kanevas stub; screenshots are
   attached to the report (`XCTAttachment`, `keepAlways`) and land in `.banc/captures/`.
 
-Both play on the bench with `xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`.
+`UnreachableStatesTests` (UI) starts a loopback `StatusServer` (`Tests/UITests/Harness/StatusServer.swift`, no `node`, no Kanevas stub) that always answers a chosen HTTP status, and checks E-2, Retry (also while the server is still down) and that a 404 stays on its page.
+
+`UnreachableBoundariesTests` (UI, written from need B-6) uses its own private `RouteServer` (loopback, per-path status, no `node`, no Kanevas stub), which can also accept a connection and close it unanswered. It checks the bounds of the 5xx range (500 and 599 show E-2; 401, 403, 499 do not), a connection cut with no answer, Retry reloading the address that failed rather than the base one, and that a 500 on a sub-resource does not show E-2.
+
+`LinksTests` (UI) serves its own page with an external link from a loopback HTTP server started by the test (no Kanevas stub),
+launches the app with `-KANEVAS_URL` on it and `-KANEVAS_FAKE_OPENER` (Debug double recording the opened URL, read through the
+`externalOpenCount` / `lastExternalURL` accessibility elements), and checks the view stays on its page.
+
+All UI tests play on the bench with `xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`.
+One UI class alone: add `-only-testing:KanevasUITests/<Class>` (e.g. `UnreachableBoundariesTests`). Other UI classes: `StubHarnessUITests` (the harness starts the stub), `StubSignInPageUITests` (account choice page), `OfflineTests` (P-4: nothing listens, then the stub starts and Retry loads its page).
 Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` missing: `Scripts/fetch-kanevas.sh` exits 3; the harness then throws and the UI test fails (it is the bench, not the app, that is at fault).
 
 ## Harness (`Tests/UITests/Harness/`)
 
-- `StubServer` starts and stops the stub at any moment of a test, also after the app has launched. Host `127.0.0.1`, port
-  `3055` by default (`KANEVAS_STUB_PORT` overrides). It runs `node --import tsx src/server.ts` in the Kanevas clone with
-  `KANEVAS_STUB=1`, `PORT`, a `DB_PATH` and a `SESSION_SECRET` in a temporary folder: the harness never writes in the clone.
+- `StatusServer` (`Harness/StatusServer.swift`): loopback server answering one status, changeable during the test. `RouteServer` is a private copy inside `UnreachableBoundariesTests.swift` that adds a status per path and closing a connection unanswered; extend `StatusServer` rather than copy it if a third test needs that.
+
+- `StubServer` starts and stops the stub at any moment of a test, also after the app has launched. Host `127.0.0.1`. `startStub()` picks a
+  free port per test (`StubServer.freePort()`); `KANEVAS_STUB_PORT` forces one (a bare `StubServer()` defaults to `3055`). A port
+  already answering fails the start with a clear message, instead of testing a stub left by a cut run. It runs `node --import tsx src/server.ts` in the Kanevas clone with
+  `KANEVAS_STUB=1`, `PORT`, a `DB_PATH` and a `SESSION_SECRET` (fresh per stub: a session cookie left in the simulator's web view by an earlier test, cookies ignoring the port, no longer verifies) in a temporary folder: the clone stays read-only.
   The test process is a simulator process, so children are spawned with `posix_spawn` (`Process` does not exist on iOS).
 - Kanevas clone: `KANEVAS_SRC` (path of a clone with `node_modules` installed and the web build `dist/public`; the harness does not build it and fails with a message if the build is missing), else `Scripts/fetch-kanevas.sh` clones
   `https://github.com/AntorFr/kanevas` (runs `npm ci`, then `npm run build` when `dist/public/index.html` is missing, exit 3 if either fails) outside this repository, in `$TMPDIR/kanevas-ios-stub-src`,
   and prints its path. Nothing of Kanevas is committed here.
+- `expectInWebView(_:of:stub:expecting:)` waits for an element of the web view; on failure it attaches `stub.log`, the answer of
+  `GET /connexion-bouchon`, the accessibility hierarchy and a screenshot, and names the cause (stub silent, page served
+  differently, page served but element not found).
 - `XCUIApplication.launch(pointingAt:)` passes `-KANEVAS_URL`; `XCUIApplication.signIn(account:)` taps
   « Se connecter en tant que <Name> » in the web view (the button posts `compte=<id>` to `/connexion-bouchon`);
   `attachScreenshot(_:of:)` joins a capture.
