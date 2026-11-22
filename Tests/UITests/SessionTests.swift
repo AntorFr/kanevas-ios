@@ -76,7 +76,9 @@ final class SessionTests: XCTestCase {
         openMap(app)
 
         tap(app, "Maître Aldric")
-        XCTAssertTrue(app.webViews.staticTexts["Apparence"].waitForExistence(timeout: 30), "sheet lore not shown")
+        let lore = element(app, "Apparence").waitForExistence(timeout: 30)
+        if !lore { attachScreenshot("sheet-not-shown", of: app) }
+        XCTAssertTrue(lore, "sheet lore not shown")
         attachScreenshot("P-2-character-sheet", of: app)
     }
 
