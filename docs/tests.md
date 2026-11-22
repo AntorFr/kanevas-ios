@@ -28,8 +28,12 @@ Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` miss
   `KANEVAS_STUB=1`, `PORT`, a `DB_PATH` and a `SESSION_SECRET` (fresh per stub: a session cookie left in the simulator's web view by an earlier test, cookies ignoring the port, no longer verifies) in a temporary folder: the clone stays read-only.
   The test process is a simulator process, so children are spawned with `posix_spawn` (`Process` does not exist on iOS).
 - Kanevas clone: `KANEVAS_SRC` (path of a clone with `node_modules` installed and the web build `dist/public`; the harness does not build it and fails with a message if the build is missing), else `Scripts/fetch-kanevas.sh` clones
-  `https://github.com/AntorFr/kanevas` (runs `npm ci`, then `npm run build` when `dist/public/index.html` is missing, exit 3 if either fails) outside this repository, in `$TMPDIR/kanevas-ios-stub-src`,
-  and prints its path. Nothing of Kanevas is committed here.
+  `https://github.com/AntorFr/kanevas` (runs `npm ci`) outside this repository, in `$TMPDIR/kanevas-ios-stub-src`, checks it out at the commit the web build came from, copies the shared web build into its `dist/public`,
+  and prints its path (exit 3 if the shared build is missing). Nothing of Kanevas is committed here.
+- Web build of Kanevas: the Mac has no `cargo` nor `wasm-pack`, so it never builds the web. The pod does, before `xcodebuild`
+  (`installation:` of `.sdlc.yaml` runs `Scripts/build-kanevas-web.sh`): it builds `dist/public` of `AntorFr/kanevas` HEAD and shares it in
+  `/sdlc/runs/kanevas-web/public`, with the Kanevas commit in `/sdlc/runs/kanevas-web/REVISION` (`KANEVAS_WEB_DIR` overrides; rebuilt only when
+  that HEAD changes). `node_modules` is never shared (esbuild binaries are per OS).
 - `expectInWebView(_:of:stub:expecting:)` waits for an element of the web view; on failure it attaches `stub.log`, the answer of
   `GET /connexion-bouchon`, the accessibility hierarchy and a screenshot, and names the cause (stub silent, page served
   differently, page served but element not found).
