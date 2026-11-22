@@ -28,7 +28,7 @@ Build and tests run on the bench only (Xcode on a Mac, through the `xcodebuild` 
 xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'
 ```
 
-Unit tests alone: add `-only-testing:KanevasUnitTests`. The UI tests start Kanevas in stub mode themselves (except `LinksTests`, `UnreachableStatesTests` and `UnreachableBoundariesTests`, which serve their own pages from loopback servers;
+Unit tests alone: add `-only-testing:KanevasUnitTests`; one UI class: `-only-testing:KanevasUITests/<Class>`. The UI tests start Kanevas in stub mode themselves (except `LinksTests`, `UnreachableStatesTests` and `UnreachableBoundariesTests`, which serve their own pages from loopback servers;
 the others need `node`, `git`, network; see `docs/tests.md`). Bench unreachable: exit code 3, not a red test (that code comes from the bench shim). If git, node, npm or network is missing, `Scripts/fetch-kanevas.sh` exits 3 inside the UI test, which then fails: that is the bench's fault, not the app's.
 
 Run the app by hand against the stub: in a clone of `AntorFr/kanevas` with its dependencies installed (`npm ci`),

@@ -19,7 +19,7 @@ bouchon, diagnostic joint à l'échec (`expectInWebView`).
 Hors réseau livré (feature `kanevas-ios-hors-reseau`, P-4, B-6) : `FailureMapping` (KanevasCore) range les erreurs `NSURLErrorDomain`
 (hors annulation) et les HTTP 500–599 en `.unreachable` ; `FailureHandler` le dit à `ConnectionModel` ; `RootView` affiche E-2
 (`UnreachableView`, « Kanevas is unreachable », « Retry ») ; Retry recharge l'adresse en échec par `load(URLRequest)`.
-Tests : `FailureMappingTests` (unitaire), `OfflineTests` (UI, port qui s'éveille, capture P-4), `UnreachableStatesTests` (UI, `StatusServer` local : 5xx, 404, Retry en échec, coupure après lecture, grand texte).
+Tests : `FailureMappingTests` (unitaire), `OfflineTests` (UI, port qui s'éveille, capture P-4), `UnreachableStatesTests` (UI, `StatusServer` local : 5xx, 404, Retry en échec, coupure après lecture, grand texte), `UnreachableBoundariesTests` (UI, `RouteServer` privé : bornes 500/599 et 4xx, coupure sans réponse, Retry sur l'adresse en échec, sous-ressource 500). Piège : `RouteServer` duplique `StatusServer`, à fusionner si un troisième test en a besoin.
 
 ## Reste
 

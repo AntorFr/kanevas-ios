@@ -14,10 +14,13 @@
 launches the app with `-KANEVAS_URL` on it and `-KANEVAS_FAKE_OPENER` (Debug double recording the opened URL, read through the
 `externalOpenCount` / `lastExternalURL` accessibility elements), and checks the view stays on its page.
 
-Both play on the bench with `xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`.
+All UI tests play on the bench with `xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`.
+One UI class alone: add `-only-testing:KanevasUITests/<Class>` (e.g. `UnreachableBoundariesTests`). Other UI classes: `StubHarnessUITests` (the harness starts the stub), `StubSignInPageUITests` (account choice page), `OfflineTests` (P-4: nothing listens, then the stub starts and Retry loads its page).
 Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` missing: `Scripts/fetch-kanevas.sh` exits 3; the harness then throws and the UI test fails (it is the bench, not the app, that is at fault).
 
 ## Harness (`Tests/UITests/Harness/`)
+
+- `StatusServer` (`Harness/StatusServer.swift`): loopback server answering one status, changeable during the test. `RouteServer` is a private copy inside `UnreachableBoundariesTests.swift` that adds a status per path and closing a connection unanswered; extend `StatusServer` rather than copy it if a third test needs that.
 
 - `StubServer` starts and stops the stub at any moment of a test, also after the app has launched. Host `127.0.0.1`. `startStub()` picks a
   free port per test (`StubServer.freePort()`); `KANEVAS_STUB_PORT` forces one (a bare `StubServer()` defaults to `3055`). A port
