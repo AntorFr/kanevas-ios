@@ -36,7 +36,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   the page's own links. A target page other than the default is not tested.
 - **AD-liens-1 — The policy is one pure function.** `NavigationPolicy.decide(url:, targetIsNewWindow:, allowedHosts:)` in the SwiftPM
   package returns `.allowInView`, `.loadInView` (a `target=_blank` / `window.open` request to an allowed host, loaded in the same view) or
-  `.openExternally`. Host match is exact, case-insensitive, on `URL.host`; only `https` (and `http` for a loopback host, in any build, if the host is allowed)
+  `.openExternally`. Host match is exact, case-insensitive, on `URL.host`; only `https` (and `http` for a loopback host, if the host is allowed; the function is build-agnostic, but only Debug's ATS settings let the web view load plain http, see `project.yml`)
   is allowed in view; `mailto:`, `tel:` and any other scheme go to the system. A URL without host is never kept in the view.
   Rejected: suffix matching (`evil-kanevas.example` would pass).
 - **AD-liens-2 — One handler in the composed delegate.** `NavigationPolicyHandler` is the policy handler of the socle's single
@@ -59,7 +59,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   failure, code 3. `XCUIApplication.signIn(account:)` is the sign-in helper (`POST /connexion-bouchon`, `compte=<id>`). Screenshots
   are attached to the test report (`XCTAttachment`, lifetime `keepAlways`). Stub facts live in `docs/tests.md`.
 - **AD-socle-3 — Layout.** `project.yml` (XcodeGen: app, unit test and UI test targets, iPad only), `Package.swift` (pure logic,
-  `KanevasCore`: base URL resolution), `App/` (SwiftUI shell, `WebView`, handlers), `Tests/`. The base URL is `KanevasBaseURL` in
+  `KanevasCore`: base URL resolution, `NavigationPolicy`, `FailureMapping`), `App/` (SwiftUI shell, `WebView`, handlers), `Tests/`. The base URL is `KanevasBaseURL` in
   Info.plist; the launch argument `-KANEVAS_URL` wins (AD-5).
 - **AD-reseau-1 — Failure mapping is pure.** `FailureMapping` in the SwiftPM package (`KanevasCore`) maps a navigation outcome to `ConnectionState` (`.ok`, `.unreachable`):
   `state(forError:)` gives `.unreachable` for any error of `NSURLErrorDomain` (offline, host not found, cannot connect, timeout, TLS failure…) and `.ok` for the two
