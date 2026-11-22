@@ -24,6 +24,10 @@ if [ ! -d "$dest/node_modules/tsx" ]; then
 fi
 if [ ! -f "$dest/dist/public/index.html" ]; then
   # The stub serves the map and the sheets from the web build; without it every page is « Page introuvable. ».
+  # The web build needs rust/pkg (WebAssembly): built first when absent (needs cargo and wasm-pack).
+  if [ ! -d "$dest/rust/pkg" ]; then
+    (cd "$dest" && npm run build:wasm >&2) || fail "npm run build:wasm failed (cargo / wasm-pack on the bench?)"
+  fi
   (cd "$dest" && npm run build >&2) || fail "npm run build failed"
   [ -f "$dest/dist/public/index.html" ] || fail "npm run build left no dist/public/index.html"
 fi
