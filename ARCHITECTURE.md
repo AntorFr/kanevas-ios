@@ -32,7 +32,8 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-session-3 — One UI test file for P-1 to P-3.** `Tests/UITests/SessionTests.swift`, using the socle harness only (stub
   start, `signIn(account:)`, screenshots). Observation is by reading elements of the web content (account choice page, map,
   sheet title/lore text), never by pixels. Return to the target page after sign-in (B-4) is the stub redirect's behaviour; the
-  test asserts the map is shown again, the default target.
+  test asserts the stub's default landing page (the universe list, « Mes univers ») is shown again, then opens the map through
+  the page's own links. A target page other than the default is not tested.
 - **AD-liens-1 — The policy is one pure function.** `NavigationPolicy.decide(url:, targetIsNewWindow:, allowedHosts:)` in the SwiftPM
   package returns `.allowInView`, `.loadInView` (a `target=_blank` / `window.open` request to an allowed host, loaded in the same view) or
   `.openExternally`. Host match is exact, case-insensitive, on `URL.host`; only `https` (and `http` for a loopback host, in any build, if the host is allowed)
