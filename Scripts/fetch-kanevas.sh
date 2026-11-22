@@ -6,7 +6,7 @@ set -eu
 
 dest="${KANEVAS_CLONE_DIR:-${TMPDIR:-/tmp}/kanevas-ios-stub-src}"
 url="${KANEVAS_REPO_URL:-https://github.com/AntorFr/kanevas}"
-share="${KANEVAS_WEB_DIR:-/sdlc/runs/kanevas-web}"
+share="${KANEVAS_WEB_DIR:-$(cd "$(dirname "$0")/.." && pwd -P)/.kanevas-web}"
 repo_root="$(cd "$(dirname "$0")/.." && pwd -P)"
 
 fail() { echo "fetch-kanevas: $1" >&2; exit 3; }

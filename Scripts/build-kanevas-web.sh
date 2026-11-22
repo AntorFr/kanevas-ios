@@ -1,13 +1,13 @@
 #!/bin/sh
 # Runs in the POD (Linux: Rust, wasm32 target and wasm-pack are in the image), before xcodebuild.
 # Builds the web of AntorFr/kanevas and shares ONLY its dist/public in a folder the bench (the Mac) sees:
-#   ${KANEVAS_WEB_DIR:-/sdlc/runs/kanevas-web}/public   the web build
-#   ${KANEVAS_WEB_DIR:-/sdlc/runs/kanevas-web}/REVISION the Kanevas commit it was built from
+#   ${KANEVAS_WEB_DIR:-<repo>/.kanevas-web}/public   the web build
+#   ${KANEVAS_WEB_DIR:-<repo>/.kanevas-web}/REVISION the Kanevas commit it was built from
 # Rebuilt only when the Kanevas HEAD differs from REVISION. node_modules is never shared (esbuild binaries are per OS).
 # Any failure exits 3 (environment problem, not a red test).
 set -eu
 
-share="${KANEVAS_WEB_DIR:-/sdlc/runs/kanevas-web}"
+share="${KANEVAS_WEB_DIR:-$(cd "$(dirname "$0")/.." && pwd -P)/.kanevas-web}"
 url="${KANEVAS_REPO_URL:-https://github.com/AntorFr/kanevas}"
 
 fail() { echo "build-kanevas-web: $1" >&2; exit 3; }
