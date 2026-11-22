@@ -6,7 +6,9 @@
 - **UI** (`KanevasUITests`, iPad simulator): the app launched with `-KANEVAS_URL` against the Kanevas stub; screenshots are
   attached to the report (`XCTAttachment`, `keepAlways`) and land in `.banc/captures/`.
 
-`UnreachableStatesTests` (UI) starts a loopback `StatusServer` (`Tests/UITests/Harness/StatusServer.swift`, no `node`, no Kanevas stub) that answers a chosen HTTP status or cuts the connection, and checks E-2, Retry and that a 404 stays on its page.
+`UnreachableStatesTests` (UI) starts a loopback `StatusServer` (`Tests/UITests/Harness/StatusServer.swift`, no `node`, no Kanevas stub) that always answers a chosen HTTP status, and checks E-2, Retry (also while the server is still down) and that a 404 stays on its page.
+
+`UnreachableBoundariesTests` (UI, written from need B-6) uses its own private `RouteServer` (loopback, per-path status, no `node`, no Kanevas stub), which can also accept a connection and close it unanswered. It checks the bounds of the 5xx range (500 and 599 show E-2; 401, 403, 499 do not), a connection cut with no answer, Retry reloading the address that failed rather than the base one, and that a 500 on a sub-resource does not show E-2.
 
 `LinksTests` (UI) serves its own page with an external link from a loopback HTTP server started by the test (no Kanevas stub),
 launches the app with `-KANEVAS_URL` on it and `-KANEVAS_FAKE_OPENER` (Debug double recording the opened URL, read through the
