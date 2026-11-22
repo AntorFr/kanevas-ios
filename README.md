@@ -12,7 +12,7 @@ The children's iPad app for Kanevas: a SwiftUI shell around one full-screen `WKW
 
 ## Base URL
 
-`KanevasBaseURL` in Info.plist (generated from `project.yml`, where it is set; there is no Info.plist file to edit) (default `https://kanevas.berard.me`); the launch argument `-KANEVAS_URL <url>` overrides it.
+`KanevasBaseURL` in Info.plist (generated from `project.yml`, where it is set; the generated `App/Info.plist` is a build product: do not edit it by hand) (default `https://kanevas.berard.me`); the launch argument `-KANEVAS_URL <url>` overrides it.
 
 ## Links
 

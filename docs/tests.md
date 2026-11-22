@@ -14,6 +14,8 @@
 launches the app with `-KANEVAS_URL` on it and `-KANEVAS_FAKE_OPENER` (Debug double recording the opened URL, read through the
 `externalOpenCount` / `lastExternalURL` accessibility elements), and checks the view stays on its page.
 
+`SessionTests` (UI, P-1 to P-3) starts the Kanevas stub and plays: first launch (account choice, sign-in, the stub's default landing page, then the map and a character sheet through the page's own links), relaunch after the process is terminated (no sign-in again: the stub's session cookie survives a kill, so nothing to work around in the app), and an expired session (relaunch with the Debug argument `-KANEVAS_CLEAR_SESSION`: sign-in shows again, then the landing page). One screenshot per journey.
+
 All UI tests play on the bench with `xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`.
 One UI class alone: add `-only-testing:KanevasUITests/<Class>` (e.g. `UnreachableBoundariesTests`). Other UI classes: `StubHarnessUITests` (the harness starts the stub), `StubSignInPageUITests` (account choice page), `OfflineTests` (P-4: nothing listens, then the stub starts and Retry loads its page).
 Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` missing: `Scripts/fetch-kanevas.sh` exits 3; the harness then throws and the UI test fails (it is the bench, not the app, that is at fault).
