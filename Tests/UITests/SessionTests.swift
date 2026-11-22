@@ -20,56 +20,79 @@ final class SessionTests: XCTestCase {
                       "account choice page not shown")
     }
 
-    private func expectMap(_ app: XCUIApplication) {
-        let map = app.webViews.staticTexts["Carte de la côte"]
-        let shown = map.waitForExistence(timeout: 30)
-        if !shown { attachScreenshot("map-not-shown", of: app) }
-        XCTAssertTrue(shown, "map not shown")
+    /// Any element of the web content carrying this label (a link, a heading, a card: the page decides).
+    private func element(_ app: XCUIApplication, _ label: String) -> XCUIElement {
+        app.webViews.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    /// The stub serves « Mes univers » at `/` (its default target after sign-in and on a relaunch with a session).
+    private func expectLanding(_ app: XCUIApplication) {
+        let shown = element(app, "Lame d'Ébène").waitForExistence(timeout: 30)
+        if !shown { attachScreenshot("landing-not-shown", of: app) }
+        XCTAssertTrue(shown, "universe list not shown")
         XCTAssertFalse(app.webViews.staticTexts["Choisir un compte de test"].exists, "still on the sign-in page")
     }
 
-    /// P-1: no session → account choice → sign in → map.
+    private func tap(_ app: XCUIApplication, _ label: String) {
+        let target = element(app, label)
+        if !target.waitForExistence(timeout: 30) { attachScreenshot("missing-\(label)", of: app) }
+        XCTAssertTrue(target.exists, "« \(label) » not shown")
+        target.tap()
+    }
+
+    /// From the universe list to the map, through the page's own links (the app draws no navigation, E-1).
+    private func openMap(_ app: XCUIApplication) {
+        tap(app, "Lame d'Ébène")
+        tap(app, "Cartes")
+        tap(app, "Carte de la côte")
+        let shown = element(app, "Maître Aldric").waitForExistence(timeout: 30)
+        if !shown { attachScreenshot("map-not-shown", of: app) }
+        XCTAssertTrue(shown, "map not shown")
+    }
+
+    /// P-1: no session → account choice → sign in → universe list → map.
     func testFirstLaunchSignsInAndShowsMap() throws {
         let stub = try startStub()
         let app = launch(stub, clearSession: true)
         expectAccountChoice(app)
         app.signIn(account: account)
-        expectMap(app)
+        expectLanding(app)
+        openMap(app)
         attachScreenshot("P-1-first-launch-map", of: app)
     }
 
-    /// P-2: after the process is killed, the relaunch lands on the map without signing in, then a sheet is opened.
+    /// P-2: after the process is killed, the relaunch lands on the universe list without signing in, then the map and a sheet are opened.
     func testRelaunchKeepsSessionAndOpensSheet() throws {
         let stub = try startStub()
         var app = launch(stub, clearSession: true)
         expectAccountChoice(app)
         app.signIn(account: account)
-        expectMap(app)
+        expectLanding(app)
 
         app.terminate()
         app = launch(stub)
-        expectMap(app)
+        expectLanding(app)
+        openMap(app)
 
-        let sheet = app.webViews.staticTexts["Maître Aldric"]
-        XCTAssertTrue(sheet.waitForExistence(timeout: 30), "character not on the map")
-        sheet.tap()
+        tap(app, "Maître Aldric")
         XCTAssertTrue(app.webViews.staticTexts["Apparence"].waitForExistence(timeout: 30), "sheet lore not shown")
         attachScreenshot("P-2-character-sheet", of: app)
     }
 
-    /// P-3: relaunched with the session cleared, sign-in comes back, then the map.
+    /// P-3: relaunched with the session cleared, sign-in comes back, then the universe list and the map.
     func testExpiredSessionAsksSignInAgain() throws {
         let stub = try startStub()
         var app = launch(stub, clearSession: true)
         expectAccountChoice(app)
         app.signIn(account: account)
-        expectMap(app)
+        expectLanding(app)
 
         app.terminate()
         app = launch(stub, clearSession: true)
         expectAccountChoice(app)
         attachScreenshot("P-3-session-expired", of: app)
         app.signIn(account: account)
-        expectMap(app)
+        expectLanding(app)
+        openMap(app)
     }
 }
