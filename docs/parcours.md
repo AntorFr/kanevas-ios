@@ -37,7 +37,7 @@ journey or screen here and nothing in the app supports it (AD-7).
 - **P-4 — Kanevas unreachable (no network, or Kanevas down).** Launch or navigation fails, or Kanevas answers HTTP 5xx on the page → E-2 ("Kanevas is unreachable", Retry) → Retry reloads the last address; if it fails again, E-2 returns. Actor: the child; screen: E-2. B-6.
 - **P-5 — External link.** A child taps an external link in a sheet → the system browser opens. B-5.
 - **P-6 — Chain build and test.** The chain builds the app and plays unit and UI tests on the bench against Kanevas in
-  stub mode; the run attaches one screenshot per journey P-1 to P-5 (E-1, E-2). Actor: the chain; no screen of its own. B-7. (So far: the account choice page and P-4 (E-2); the others come with their slices.)
+  stub mode; the run attaches one screenshot per journey P-1 to P-5 (E-1, E-2). Actor: the chain; no screen of its own. B-7. (So far: the account choice page, P-1 to P-3 (`SessionTests`) and P-4 (E-2); P-5 comes with its slice.)
 
 ## Out of scope
 

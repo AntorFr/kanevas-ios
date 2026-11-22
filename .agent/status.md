@@ -1,6 +1,6 @@
 # Status — kanevas-ios
 
-> MàJ : 2026-11-21
+> MàJ : 2026-11-22
 
 ## État
 
@@ -21,13 +21,17 @@ Hors réseau livré (feature `kanevas-ios-hors-reseau`, P-4, B-6) : `FailureMapp
 (`UnreachableView`, « Kanevas is unreachable », « Retry ») ; Retry recharge l'adresse en échec par `load(URLRequest)`.
 Tests : `FailureMappingTests` (unitaire), `OfflineTests` (UI, port qui s'éveille, capture P-4), `UnreachableStatesTests` (UI, `StatusServer` local : 5xx, 404, Retry en échec, coupure après lecture, grand texte), `UnreachableBoundariesTests` (UI, `RouteServer` privé : bornes 500/599 et 4xx, coupure sans réponse, Retry sur l'adresse en échec, sous-ressource 500). Piège : `RouteServer` duplique `StatusServer`, à fusionner si un troisième test en a besoin.
 
+Session livrée (feature `kanevas-ios-session`, P-1 à P-3, B-1 à B-4) : `SessionReset` (App, Debug seul) vide le magasin de la WKWebView quand `-KANEVAS_CLEAR_SESSION` est passé, avant le premier chargement (AD-session-1) ; la persistance reste celle de la web view (AD-session-2). `SessionTests` (UI) : première connexion jusqu'à la carte, relance après arrêt du processus sans reconnexion puis fiche de « Maître Aldric » (« Ouvrir la fiche »), session vidée puis reconnexion. Le bouchon sert « Mes univers » à la racine : la carte s'atteint par les liens de la page. Harnais : le pod construit le web de Kanevas (`Scripts/build-kanevas-web.sh`, `installation:` de `.sdlc.yaml`) et le partage dans `.kanevas-web/` ; `fetch-kanevas.sh` le copie.
+
 ## Reste
 
-- Session : connexion, persistance, expiration (`kanevas-ios-session`) ; s'appuie sur `XCUIApplication.signIn(account:)` (déjà écrit dans le harnais, aucun test ne l'appelle encore).
 - Preuve de la suite entière : jouée par `attester` avant la recette ; `testAppShowsAccountChoicePage` (StubSignInPageUITests) rejoué 3 fois de suite, vert, sur le banc (feature `rouge-kanevas-ios-1`).
 
 ## Pièges
 
+- Le Mac du banc n'a ni `cargo` ni `wasm-pack` : le web de Kanevas se construit dans le pod avant `xcodebuild` ; sans `.kanevas-web/`, `fetch-kanevas.sh` sort 3.
+- `-KANEVAS_CLEAR_SESSION` n'existe qu'en Debug ; le premier lancement d'un test le passe, les cookies du simulateur survivant d'un test à l'autre.
+- Dans le bouchon, des liens de la page se disent non touchables : les tests touchent leur centre.
 - Le double d'ouverture (`FakeOpenerOverlay`) n'existe qu'en Debug ; Release ouvre via `UIApplication.shared.open`.
 - L'hôte est comparé exactement (pas de suffixe) et sans port ; un schéma sans hôte (`mailto:`, `tel:`) part au système.
 - Un cookie de session reste dans la web view du simulateur d'un test à l'autre (les cookies ignorent le port) : d'où le secret neuf par bouchon.
