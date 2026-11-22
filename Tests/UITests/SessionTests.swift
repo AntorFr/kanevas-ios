@@ -75,7 +75,9 @@ final class SessionTests: XCTestCase {
         expectLanding(app)
         openMap(app)
 
+        // selecting the node shows its panel on the map; the sheet itself opens from « Ouvrir la fiche »
         tap(app, "Maître Aldric")
+        tap(app, "Ouvrir la fiche")
         let lore = element(app, "Apparence").waitForExistence(timeout: 30)
         if !lore { attachScreenshot("sheet-not-shown", of: app) }
         XCTAssertTrue(lore, "sheet lore not shown")
