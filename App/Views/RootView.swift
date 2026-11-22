@@ -12,6 +12,11 @@ struct RootView: View {
                                          infoDictionary: Bundle.main.infoDictionary) {
                 WebView(url: url, model: model, connection: connection)
                     .ignoresSafeArea()
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-KANEVAS_FAKE_OPENER") {
+                    FakeOpenerOverlay(opener: FakeURLOpener.shared)
+                }
+                #endif
                 if model.isLoading {
                     ProgressView(value: model.progress)
                         .progressViewStyle(.linear)

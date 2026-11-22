@@ -28,12 +28,41 @@ final class StubServer {
         Int(ProcessInfo.processInfo.environment["KANEVAS_STUB_PORT"] ?? "") ?? 3055
     }
 
+    /// A TCP port nobody listens on right now (the kernel picks it), so a stub left over from a cut run
+    /// on the default port cannot answer in place of the test's own. Nil when none could be obtained.
+    static func freePort() -> Int? {
+        let fd = socket(AF_INET, SOCK_STREAM, 0)
+        guard fd >= 0 else { return nil }
+        defer { close(fd) }
+        var addr = sockaddr_in()
+        addr.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_port = 0
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1")
+        let bound = withUnsafePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+            }
+        }
+        guard bound == 0 else { return nil }
+        var len = socklen_t(MemoryLayout<sockaddr_in>.size)
+        let named = withUnsafeMutablePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(fd, $0, &len) }
+        }
+        guard named == 0 else { return nil }
+        return Int(UInt16(bigEndian: addr.sin_port))
+    }
+
     var baseURL: URL { URL(string: "http://\(host):\(port)")! }
     var isRunning: Bool { pid != 0 }
 
     /// Starts the stub and returns once `/connexion-bouchon` answers.
     func start(timeout: TimeInterval = 90) throws {
         guard pid == 0 else { return }
+        // A stub left over from a cut run would answer in place of ours: fail cleanly instead of testing it.
+        if isAnswering() {
+            throw HarnessError("port \(port) is already served by another process (a stub left from an interrupted run?): free it or set KANEVAS_STUB_PORT")
+        }
         let source = try KanevasSource.path()
         try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
         let env: [String: String] = [
@@ -42,7 +71,9 @@ final class StubServer {
             "KANEVAS_STUB": "1",
             "PORT": String(port),
             "DB_PATH": workDir.appendingPathComponent("kanevas.db").path,
-            "SESSION_SECRET": "kanevas-ios-harness-secret",
+            // Fresh per stub: a session cookie left in the simulator's web view data store by an earlier test or run
+            // (cookies ignore the port) no longer verifies, so the app starts signed out, as the tests assume.
+            "SESSION_SECRET": "kanevas-ios-harness-\(UUID().uuidString)",
             "NODE_ENV": "development",
         ]
         // The clone is read-only: `tsx` runs the TypeScript sources, no build writes into it.
@@ -57,6 +88,11 @@ final class StubServer {
             stop()
             throw HarnessError("\(error)\nstub log:\n\(log.suffix(2000))")
         }
+    }
+
+    /// Output of the stub process so far (`stub.log`); empty when it never started.
+    var logContents: String {
+        (try? String(contentsOf: workDir.appendingPathComponent("stub.log"))) ?? ""
     }
 
     func stop() {
