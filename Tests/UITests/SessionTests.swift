@@ -37,7 +37,8 @@ final class SessionTests: XCTestCase {
         let target = element(app, label)
         if !target.waitForExistence(timeout: 30) { attachScreenshot("missing-\(label)", of: app) }
         XCTAssertTrue(target.exists, "« \(label) » not shown")
-        target.tap()
+        // the web view reports some links as not hittable (cards, sidebar): tap their centre instead
+        target.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
     }
 
     /// From the universe list to the map, through the page's own links (the app draws no navigation, E-1).
