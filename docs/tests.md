@@ -31,7 +31,7 @@ Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` miss
   `https://github.com/AntorFr/kanevas` (runs `npm ci`) outside this repository, in `$TMPDIR/kanevas-ios-stub-src`, checks it out at the commit the web build came from, copies the shared web build into its `dist/public`,
   and prints its path (exit 3 if the shared build is missing). Nothing of Kanevas is committed here.
 - Web build of Kanevas: the Mac has no `cargo` nor `wasm-pack`, so it never builds the web. The pod does, before `xcodebuild`
-  (`installation:` of `.sdlc.yaml` runs `Scripts/build-kanevas-web.sh`): it builds `dist/public` of `AntorFr/kanevas` HEAD and shares it in the untracked, git-ignored
+  (`installation:` of `.sdlc.yaml` runs `Scripts/build-kanevas-web.sh`): it builds `dist/public` of `AntorFr/kanevas` HEAD and shares `dist/public` and `dist/wasm` (the stub server loads the Wasm core) in the untracked, git-ignored
   `<repo>/.kanevas-web/public`, with the Kanevas commit in `<repo>/.kanevas-web/REVISION` (`KANEVAS_WEB_DIR` overrides; rebuilt only when
   that HEAD changes). `node_modules` is never shared (esbuild binaries are per OS).
 - `expectInWebView(_:of:stub:expecting:)` waits for an element of the web view; on failure it attaches `stub.log`, the answer of

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Runs in the POD (Linux: Rust, wasm32 target and wasm-pack are in the image), before xcodebuild.
-# Builds the web of AntorFr/kanevas and shares ONLY its dist/public in a folder the bench (the Mac) sees:
+# Builds the web of AntorFr/kanevas and shares ONLY its dist/public and dist/wasm (the server loads the Wasm core: platform-neutral) in a folder the bench (the Mac) sees:
 #   ${KANEVAS_WEB_DIR:-<repo>/.kanevas-web}/public   the web build
 #   ${KANEVAS_WEB_DIR:-<repo>/.kanevas-web}/REVISION the Kanevas commit it was built from
 # Rebuilt only when the Kanevas HEAD differs from REVISION. node_modules is never shared (esbuild binaries are per OS).
@@ -18,7 +18,7 @@ done
 
 head="$(git ls-remote "$url" HEAD | cut -f1)" || fail "git ls-remote $url failed"
 [ -n "$head" ] || fail "no HEAD for $url"
-if [ -f "$share/public/index.html" ] && [ "$(cat "$share/REVISION" 2>/dev/null)" = "$head" ]; then
+if [ -f "$share/public/index.html" ] && [ -d "$share/wasm" ] && [ "$(cat "$share/REVISION" 2>/dev/null)" = "$head" ]; then
   echo "build-kanevas-web: $share is up to date ($head)" >&2
   exit 0
 fi
@@ -31,12 +31,15 @@ rev="$(git -C "$src" rev-parse HEAD)"
 (cd "$src" && npm ci --no-audit --no-fund >&2) || fail "npm ci failed"
 (cd "$src" && npm run build:wasm >&2) || fail "npm run build:wasm failed"
 (cd "$src" && npm run build >&2) || fail "npm run build failed"
+[ -d "$src/dist/wasm" ] || fail "npm run build left no dist/wasm (the stub server loads the Wasm core from it)"
 [ -f "$src/dist/public/index.html" ] || fail "npm run build left no dist/public/index.html"
 
 mkdir -p "$share" || fail "cannot create $share"
-rm -rf "$share/public.new"
+rm -rf "$share/public.new" "$share/wasm.new"
 cp -R "$src/dist/public" "$share/public.new" || fail "cannot copy dist/public to $share"
-rm -rf "$share/public"
+cp -R "$src/dist/wasm" "$share/wasm.new" || fail "cannot copy dist/wasm to $share"
+rm -rf "$share/public" "$share/wasm"
 mv "$share/public.new" "$share/public"
+mv "$share/wasm.new" "$share/wasm"
 echo "$rev" > "$share/REVISION"
 echo "build-kanevas-web: $share built from $rev" >&2

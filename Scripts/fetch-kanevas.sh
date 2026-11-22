@@ -23,14 +23,15 @@ fi
 # The stub serves the map and the sheets from the web build (else every page is « Page introuvable. »). It is built in the
 # pod by Scripts/build-kanevas-web.sh (cargo, wasm-pack: not on the Mac) and shared in $share; this script only copies it.
 rev="$(cat "$share/REVISION" 2>/dev/null || true)"
-[ -f "$share/public/index.html" ] && [ -n "$rev" ] || fail "no shared web build in $share (public/index.html, REVISION): run Scripts/build-kanevas-web.sh in the pod"
-if [ "$(cat "$dest/dist/REVISION" 2>/dev/null || true)" != "$rev" ]; then
+[ -f "$share/public/index.html" ] && [ -d "$share/wasm" ] && [ -n "$rev" ] || fail "no shared web build in $share (public/index.html, REVISION): run Scripts/build-kanevas-web.sh in the pod"
+if [ "$(cat "$dest/dist/REVISION" 2>/dev/null || true)" != "$rev" ] || [ ! -d "$dest/dist/wasm" ]; then
   # same Kanevas commit for the server code and the web build
   (cd "$dest" && git fetch --quiet --depth 1 origin "$rev" >&2 && git checkout --quiet --force "$rev" >&2) || fail "cannot check out Kanevas $rev"
   (cd "$dest" && npm ci --no-audit --no-fund >&2) || fail "npm ci failed"
-  rm -rf "$dest/dist/public"
+  rm -rf "$dest/dist/public" "$dest/dist/wasm"
   mkdir -p "$dest/dist"
   cp -R "$share/public" "$dest/dist/public" || fail "cannot copy $share/public"
+  cp -R "$share/wasm" "$dest/dist/wasm" || fail "cannot copy $share/wasm"
   echo "$rev" > "$dest/dist/REVISION"
 fi
 echo "$dest"
