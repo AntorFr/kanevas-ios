@@ -1,8 +1,6 @@
 tests:
   banc: true
-  # the pod builds the Kanevas web (cargo, wasm-pack) and shares dist/public; the Mac only reads it
-  # (in commande: attester plays installation: only for its replays, not for the full suite)
-  commande: sh Scripts/build-kanevas-web.sh && xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'
+  commande: xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'
   # local: unit tests only (the UI tests, which boot a simulator, are the slow class)
   local: xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad' -only-testing:KanevasUnitTests
   rapport: .banc/rapport-tests/junit.xml

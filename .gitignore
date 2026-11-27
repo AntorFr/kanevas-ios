@@ -6,5 +6,4 @@ DerivedData/
 .banc/
 *.xcresult
 .DS_Store
-.kanevas-web/
 App/Info.plist
