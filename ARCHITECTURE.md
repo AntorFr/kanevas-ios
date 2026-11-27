@@ -19,9 +19,24 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
   does not run Authelia (Kanevas AD-15, AD-55): an unauthenticated request is redirected to the stub's test-account
   selection, and `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie. P-1 and P-3 are proven
   on that path; P-3 expires the session by clearing the cookies of the WKWebView data store. A real Authelia is not tested by the chain.
+- **AD-session-1 — Session expiry is simulated inside the app, Debug only.** A UI test cannot reach the app's `WKWebsiteDataStore`.
+  The Debug configuration reads the launch argument `-KANEVAS_CLEAR_SESSION`; when present, before the first load, the app removes
+  the cookie and website data of `WKWebsiteDataStore.default()` (`SessionReset`, in the app target, behind
+  `#if DEBUG`). Release has no such code path, and no UI to sign out (the app draws nothing around Kanevas, E-1). Rejected: a
+  menu or button "sign out" (new visible function, outside the scoping).
+- **AD-session-2 — Persistence is the web view's, never rewritten.** B-3 holds if the Kanevas session cookie survives a kill of
+  the process: the test terminates the app and launches it again against the same stub. The app does not copy, store or re-inject
+  cookies (`docs/donnees.md`). If the stub sets a session-only cookie (no expiry) and the relaunch loses it, that is a fact of
+  Kanevas, not of the shell: the task writes it in `docs/tests.md` and the slice stops there (Kanevas change = feature on
+  `AntorFr/kanevas`, out of scope); it does not work around it in the app.
+- **AD-session-3 — One UI test file for P-1 to P-3.** `Tests/UITests/SessionTests.swift`, using the socle harness only (stub
+  start, `signIn(account:)`, screenshots). Observation is by reading elements of the web content (account choice page, map,
+  sheet title/lore text), never by pixels. Return to the target page after sign-in (B-4) is the stub redirect's behaviour; the
+  test asserts the stub's default landing page (the universe list, « Mes univers ») is shown again, then opens the map through
+  the page's own links. A target page other than the default is not tested.
 - **AD-liens-1 — The policy is one pure function.** `NavigationPolicy.decide(url:, targetIsNewWindow:, allowedHosts:)` in the SwiftPM
   package returns `.allowInView`, `.loadInView` (a `target=_blank` / `window.open` request to an allowed host, loaded in the same view) or
-  `.openExternally`. Host match is exact, case-insensitive, on `URL.host`; only `https` (and `http` for a loopback host, in any build, if the host is allowed)
+  `.openExternally`. Host match is exact, case-insensitive, on `URL.host`; only `https` (and `http` for a loopback host, if the host is allowed; the function is build-agnostic, but only Debug's ATS settings let the web view load plain http, see `project.yml`)
   is allowed in view; `mailto:`, `tel:` and any other scheme go to the system. A URL without host is never kept in the view.
   Rejected: suffix matching (`evil-kanevas.example` would pass).
 - **AD-liens-2 — One handler in the composed delegate.** `NavigationPolicyHandler` is the policy handler of the socle's single
@@ -47,7 +62,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-web-epingle-2 — `Scripts/fetch-kanevas-web.sh` fetches, checks and prints.** It reads `KANEVAS_WEB_VERSION`, downloads `kanevas-web-<version>.tar.gz` and its `.sha256` from the Release of that tag of `AntorFr/kanevas` (the archive published by Kanevas' AD-web-publie), checks the sum, unpacks outside the repository tree into a cache per version (`${KANEVAS_WEB_CACHE:-${TMPDIR:-/tmp}/kanevas-ios-web}/<version>`; a cache already unpacked and checked is reused, no network) and prints the unpacked folder on stdout (all else on stderr). Exit codes: 0 done; 1 the pin is wrong, with a message naming the cause: `checksum mismatch` or `no archive for <version>` (Release or asset absent); 3 bench problem (network, `node`, `curl` or `tar` missing, cache unwritable), like the bench's other code 3. A half-unpacked cache is never left: unpack to a temporary folder, then rename.
 - **AD-web-epingle-3 — The harness runs the archive's launcher; the stub keeps its contract.** `StubServer` (AD-socle-2: host, free port per test, start at any moment, fresh session secret, stop) runs `node lancer-bouchon.mjs` from the folder `Scripts/fetch-kanevas-web.sh` printed, and waits as before for `/connexion-bouchon`; the launcher prints the address once `/healthz` answers, and the harness conforms to the interface Kanevas publishes: port, database folder and session secret are set through environment or options only if that interface offers them, and the harness reads the interface from the archive's launcher rather than assuming (an option the launcher does not know is never passed; the harness always chooses the port itself through the launcher's setting, as AD-socle-2 requires: if the launcher offers none, the task waits for kanevas-web-publie rather than taking a port the launcher imposes). The first launch of an archive runs `npm ci --omit=dev` (Kanevas AD-web-publie-3), so the start timeout of the first stub of a run covers it. The harness reads the archive's `VERSION` file and traces it at the head of the suite; it must equal `KANEVAS_WEB_VERSION`. The script's failure (exit 1 or 3) is repeated verbatim in the harness error. `KanevasSource.swift` is replaced by a `KanevasWeb` helper with the same role and the one entry point.
 - **AD-socle-3 — Layout.** `project.yml` (XcodeGen: app, unit test and UI test targets, iPad only), `Package.swift` (pure logic,
-  `KanevasCore`: base URL resolution), `App/` (SwiftUI shell, `WebView`, handlers), `Tests/`. The base URL is `KanevasBaseURL` in
+  `KanevasCore`: base URL resolution, `NavigationPolicy`, `FailureMapping`), `App/` (SwiftUI shell, `WebView`, handlers), `Tests/`. The base URL is `KanevasBaseURL` in
   Info.plist; the launch argument `-KANEVAS_URL` wins (AD-5).
 - **AD-reseau-1 — Failure mapping is pure.** `FailureMapping` in the SwiftPM package (`KanevasCore`) maps a navigation outcome to `ConnectionState` (`.ok`, `.unreachable`):
   `state(forError:)` gives `.unreachable` for any error of `NSURLErrorDomain` (offline, host not found, cannot connect, timeout, TLS failure…) and `.ok` for the two

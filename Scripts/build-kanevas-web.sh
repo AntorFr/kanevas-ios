@@ -1,0 +1,45 @@
+#!/bin/sh
+# Runs in the POD (Linux: Rust, wasm32 target and wasm-pack are in the image), before xcodebuild.
+# Builds the web of AntorFr/kanevas and shares ONLY its dist/public and dist/wasm (the server loads the Wasm core: platform-neutral) in a folder the bench (the Mac) sees:
+#   ${KANEVAS_WEB_DIR:-<repo>/.kanevas-web}/public   the web build
+#   ${KANEVAS_WEB_DIR:-<repo>/.kanevas-web}/REVISION the Kanevas commit it was built from
+# Rebuilt only when the Kanevas HEAD differs from REVISION. node_modules is never shared (esbuild binaries are per OS).
+# Any failure exits 3 (environment problem, not a red test).
+set -eu
+
+share="${KANEVAS_WEB_DIR:-$(cd "$(dirname "$0")/.." && pwd -P)/.kanevas-web}"
+url="${KANEVAS_REPO_URL:-https://github.com/AntorFr/kanevas}"
+
+fail() { echo "build-kanevas-web: $1" >&2; exit 3; }
+
+for tool in git node npm cargo wasm-pack; do
+  command -v "$tool" >/dev/null 2>&1 || fail "$tool not found (this script runs in the pod, not on the Mac)"
+done
+
+head="$(git ls-remote "$url" HEAD | cut -f1)" || fail "git ls-remote $url failed"
+[ -n "$head" ] || fail "no HEAD for $url"
+if [ -f "$share/public/index.html" ] && [ -d "$share/wasm" ] && [ "$(cat "$share/REVISION" 2>/dev/null)" = "$head" ]; then
+  echo "build-kanevas-web: $share is up to date ($head)" >&2
+  exit 0
+fi
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+git clone --quiet "$url" "$work/src" >&2 || fail "git clone $url failed"
+src="$work/src"
+rev="$(git -C "$src" rev-parse HEAD)"
+(cd "$src" && npm ci --no-audit --no-fund >&2) || fail "npm ci failed"
+(cd "$src" && npm run build:wasm >&2) || fail "npm run build:wasm failed"
+(cd "$src" && npm run build >&2) || fail "npm run build failed"
+[ -d "$src/dist/wasm" ] || fail "npm run build left no dist/wasm (the stub server loads the Wasm core from it)"
+[ -f "$src/dist/public/index.html" ] || fail "npm run build left no dist/public/index.html"
+
+mkdir -p "$share" || fail "cannot create $share"
+rm -rf "$share/public.new" "$share/wasm.new"
+cp -R "$src/dist/public" "$share/public.new" || fail "cannot copy dist/public to $share"
+cp -R "$src/dist/wasm" "$share/wasm.new" || fail "cannot copy dist/wasm to $share"
+rm -rf "$share/public" "$share/wasm"
+mv "$share/public.new" "$share/public"
+mv "$share/wasm.new" "$share/wasm"
+echo "$rev" > "$share/REVISION"
+echo "build-kanevas-web: $share built from $rev" >&2

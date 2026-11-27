@@ -23,7 +23,14 @@ struct WebView: UIViewRepresentable {
         view.uiDelegate = context.coordinator.policy
         context.coordinator.observe(view)
         connection.loadURL = { [weak view] in view?.load(URLRequest(url: $0)) }
-        view.load(URLRequest(url: url))
+        let request = URLRequest(url: url)
+        #if DEBUG
+        if SessionReset.requested() {
+            SessionReset.clear { view.load(request) }
+            return view
+        }
+        #endif
+        view.load(request)
         return view
     }
 
