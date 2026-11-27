@@ -18,6 +18,7 @@ launches the app with `-KANEVAS_URL` on it and `-KANEVAS_FAKE_OPENER` (Debug dou
 
 All UI tests play on the bench with `xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`.
 One UI class alone: add `-only-testing:KanevasUITests/<Class>` (e.g. `UnreachableBoundariesTests`). Other UI classes: `StubHarnessUITests` (the harness starts the stub), `StubSignInPageUITests` (account choice page), `OfflineTests` (P-4: nothing listens, then the stub starts and Retry loads its page).
+Web build: the suite command in `.sdlc.yaml` starts with `sh Scripts/build-kanevas-web.sh`, which runs in the pod (it needs `cargo` and `wasm-pack`, which the Mac of the bench lacks). It builds the web of `AntorFr/kanevas` and shares its `public/` and `wasm/` plus a `REVISION` file in `.kanevas-web/` (git-ignored, or `$KANEVAS_WEB_DIR`), which the bench reads; it rebuilds only when the Kanevas HEAD differs from `REVISION`. Any failure exits 3 (environment, not a red test). Without it, `Scripts/fetch-kanevas.sh` of the `kanevas-ios-session` slice exits 3 « no shared web build in .kanevas-web ». The suite the chain plays is therefore `sh Scripts/build-kanevas-web.sh && xcodebuild test …`; the report lands in `.banc/rapport-tests/junit.xml`.
 Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` missing: `Scripts/fetch-kanevas.sh` exits 3; the harness then throws and the UI test fails (it is the bench, not the app, that is at fault).
 
 ## Harness (`Tests/UITests/Harness/`)
