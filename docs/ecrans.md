@@ -1,7 +1,7 @@
 # Kanevas iOS — screens
 
 > Built so far: E-1 loading and loaded (slice `kanevas-ios-socle`), external links (slice `kanevas-ios-liens`), E-2 and the
-> failure handler (slice `kanevas-ios-hors-reseau`).
+> failure handler (slice `kanevas-ios-hors-reseau`), session persistence and expiry on E-1 (slice `kanevas-ios-session`, no new screen).
 
 | Id | Screen | Who | What they do |
 |---|---|---|---|
