@@ -1,6 +1,6 @@
 # Status — kanevas-ios
 
-> MàJ : 2026-11-21
+> MàJ : 2026-11-27
 
 ## État
 
@@ -21,6 +21,8 @@ Hors réseau livré (feature `kanevas-ios-hors-reseau`, P-4, B-6) : `FailureMapp
 (`UnreachableView`, « Kanevas is unreachable », « Retry ») ; Retry recharge l'adresse en échec par `load(URLRequest)`.
 Tests : `FailureMappingTests` (unitaire), `OfflineTests` (UI, port qui s'éveille, capture P-4), `UnreachableStatesTests` (UI, `StatusServer` local : 5xx, 404, Retry en échec, coupure après lecture, grand texte), `UnreachableBoundariesTests` (UI, `RouteServer` privé : bornes 500/599 et 4xx, coupure sans réponse, Retry sur l'adresse en échec, sous-ressource 500). Piège : `RouteServer` duplique `StatusServer`, à fusionner si un troisième test en a besoin.
 
+Procédé de test corrigé (feature `rouge-kanevas-ios-2`) : la commande de suite de `.sdlc.yaml` construit d'abord le build web de Kanevas dans le pod (`Scripts/build-kanevas-web.sh`, partagé dans `.kanevas-web/`), faute de quoi `fetch-kanevas.sh` de la session sortait 3 « no shared web build » sur le banc. Script, `.gitignore` et commande à l'identique de `kanevas-ios-session`, pour que sa fusion ne conflicte pas.
+
 ## Reste
 
 - Session : connexion, persistance, expiration (`kanevas-ios-session`) ; s'appuie sur `XCUIApplication.signIn(account:)` (déjà écrit dans le harnais, aucun test ne l'appelle encore).
@@ -28,6 +30,7 @@ Tests : `FailureMappingTests` (unitaire), `OfflineTests` (UI, port qui s'éveill
 
 ## Pièges
 
+- Le build web se construit dans le pod (cargo, wasm-pack), jamais sur le Mac du banc ; `attester` ne joue `installation:` que pour ses rejeux, d'où `sh Scripts/build-kanevas-web.sh &&` en tête de `commande:`.
 - Le double d'ouverture (`FakeOpenerOverlay`) n'existe qu'en Debug ; Release ouvre via `UIApplication.shared.open`.
 - L'hôte est comparé exactement (pas de suffixe) et sans port ; un schéma sans hôte (`mailto:`, `tel:`) part au système.
 - Un cookie de session reste dans la web view du simulateur d'un test à l'autre (les cookies ignorent le port) : d'où le secret neuf par bouchon.
