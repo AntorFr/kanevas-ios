@@ -29,7 +29,7 @@ xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'
 ```
 
 Unit tests alone: add `-only-testing:KanevasUnitTests`; one UI class: `-only-testing:KanevasUITests/<Class>`. The UI tests start Kanevas in stub mode themselves (except `LinksTests`, `UnreachableStatesTests` and `UnreachableBoundariesTests`, which serve their own pages from loopback servers;
-the others need `node`, `git`, network; see `docs/tests.md`). Bench unreachable: exit code 3, not a red test (that code comes from the bench shim). If git, node, npm or network is missing, `Scripts/fetch-kanevas.sh` exits 3 inside the UI test, which then fails: that is the bench's fault, not the app's.
+the others need `node`, `git`, network; see `docs/tests.md`). The suite the chain plays first builds the Kanevas web in the pod (`sh Scripts/build-kanevas-web.sh && xcodebuild test …`, shared in `.kanevas-web/`; see `docs/tests.md`). Bench unreachable: exit code 3, not a red test (that code comes from the bench shim). If git, node, npm or network is missing, `Scripts/fetch-kanevas.sh` exits 3 inside the UI test, which then fails: that is the bench's fault, not the app's.
 
 Run the app by hand against the stub: in a clone of `AntorFr/kanevas` with its dependencies installed (`npm ci`),
 `KANEVAS_STUB=1 PORT=3055 SESSION_SECRET=0123456789abcdef0123 DB_PATH=/tmp/k.db node --import tsx src/server.ts`, (the stub then serves the account choice page; pages that need Kanevas' built `dist/public` are not available from sources, see `docs/tests.md`), then, on a Mac with XcodeGen,
