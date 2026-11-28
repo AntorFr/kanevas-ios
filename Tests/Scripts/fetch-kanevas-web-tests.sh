@@ -127,7 +127,7 @@ for pat in "$a$b" "$c$d" "$e$f" "$g$h" "$k$l"; do
   hits="$(git grep -n -i -F -e "$pat" -- .sdlc.yaml Scripts Tests docs/tests.md 2>/dev/null | grep -v 'Tests/Scripts/fetch-kanevas-web-tests.sh')"
   [ -z "$hits" ] && ok "no_trace_of_$(echo "$pat" | tr -c 'A-Za-z0-9\n' '_')" || bad "no_trace_of_$pat" "$hits"
 done
-for gone in Scripts/build-kanevas-web.sh Scripts/fetch-kanevas.sh; do
+for gone in "Scripts/$e$f.sh" Scripts/fetch-kanevas.sh; do
   [ ! -e "$gone" ] && ok "removed_$(basename "$gone")" || bad "removed_$gone" "still there"
 done
 grep -q '^installation:' .sdlc.yaml && bad "no_installation_line_in_sdlc_yaml" "present" || ok "no_installation_line_in_sdlc_yaml"
