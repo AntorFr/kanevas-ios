@@ -7,7 +7,7 @@ struct HarnessError: Error, CustomStringConvertible {
     init(_ description: String) { self.description = description }
 }
 
-/// The Kanevas stub (`KANEVAS_STUB=1`, node only) on a chosen host and port, startable and stoppable at any
+/// The Kanevas stub (from the pinned archive, node only) on a chosen host and port, startable and stoppable at any
 /// moment of a test, also after the app has launched (AD-socle-2). The archive of Kanevas is read-only: the
 /// database and the session secret live in a temporary folder.
 final class StubServer {

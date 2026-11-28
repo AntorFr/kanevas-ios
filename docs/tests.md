@@ -28,7 +28,7 @@ The bench needs `node` (>= 20), `curl`, `tar`, a SHA-256 tool and network (the f
 - `StubServer` starts and stops the stub at any moment of a test, also after the app has launched. Host `127.0.0.1`. `startStub()` picks a
   free port per test (`StubServer.freePort()`); `KANEVAS_STUB_PORT` forces one (a bare `StubServer()` defaults to `3055`). A port
   already answering fails the start with a clear message, instead of testing a stub left by a cut run. The test process is a simulator process, so children are spawned with `posix_spawn` (`Process` does not exist on iOS).
-- Pinned archive: `Scripts/fetch-kanevas-web.sh [version]` reads `KANEVAS_WEB_VERSION`, downloads `kanevas-web-<version>.tar.gz` and its `.sha256` from the Release of that tag, checks the sum, unpacks it outside the repository into `${KANEVAS_WEB_CACHE:-$TMPDIR/kanevas-ios-web}/<version>` (reused without network once checked) and prints that folder. Exit 1: `checksum mismatch`, or `no archive for <version>` (Release or asset absent); exit 3: network, `node`, `curl`, `tar` or the cache. `KANEVAS_WEB_BASE_URL` overrides the download base (tests of the script). The harness (`KanevasWeb`) runs it once per run, repeats its failure verbatim, reads the archive's `VERSION`, requires it to equal the pin (without the leading `v`) and logs it at the head of the suite.
+- Pinned archive: `Scripts/fetch-kanevas-web.sh [version]` reads `KANEVAS_WEB_VERSION`, downloads `kanevas-web-<version>.tar.gz` and its `.sha256` from the Release of that tag, checks the sum, unpacks it outside the repository into `${KANEVAS_WEB_CACHE:-$TMPDIR/kanevas-ios-web}/<version>` (reused without network once checked) and prints that folder. Exit 1: `checksum mismatch`, or `no archive for <version>` (Release or asset absent); exit 3: network, `node`, `curl`, `tar` or the cache. `KANEVAS_WEB_BASE_URL` overrides the download base for the script's own tests, `sh Tests/Scripts/fetch-kanevas-web-tests.sh` (no bench, no network, not part of the `xcodebuild` suite: run it by hand after touching the script). A UI test failing with `fetch-kanevas-web.sh failed (exit 3)` is the bench's fault (node or network), not a red test of the app. The harness (`KanevasWeb`) runs it once per run, repeats its failure verbatim, reads the archive's `VERSION`, requires it to equal the pin (without the leading `v`) and logs it at the head of the suite.
 - `StubServer` runs `node lancer-bouchon.mjs --port <free port> --data <temp folder>` of the archive, plus a `SESSION_SECRET` in the environment (fresh per stub), and waits for `/connexion-bouchon`.
 
 - `expectInWebView(_:of:stub:expecting:)` waits for an element of the web view; on failure it attaches `stub.log`, the answer of
@@ -40,14 +40,13 @@ The bench needs `node` (>= 20), `curl`, `tar`, a SHA-256 tool and network (the f
 - ATS: the Debug configuration (the bench's) adds `NSAllowsLocalNetworking` only, through a post-build step of the app
   target, so the stub is served over HTTP; Release keeps the default; `NSAllowsArbitraryLoads` is never set.
 
-## Stub facts (read in the code of `AntorFr/kanevas`: `src/routes/bouchon.ts`, `src/bouchon/depart.ts`, its AD-15 and AD-55)
+## Stub facts (the stub of the pinned archive, started by `lancer-bouchon.mjs --port <port> --data <folder>` with `SESSION_SECRET` in the environment; origin: `AntorFr/kanevas` AD-15, AD-55)
 
-- **Origin**: a plain `http://<host>:<PORT>`, `PORT` default 3001; the server listens on `0.0.0.0`. No Authelia.
-  Stub mode refuses to start if any `OIDC_*` variable is set.
+- **Origin**: a plain `http://<host>:<port>`, the `--port` the harness chose. No Authelia. The stub refuses to start if any `OIDC_*` variable is set.
 - **Sign-in**: without a session, a request is redirected to `GET /connexion-bouchon`, the test-account choice page
   (title « Choisir un compte de test », one button « Se connecter en tant que <Name> » per account).
   `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie and redirects to `/`; an unknown
-  identifier redirects back to the choice page. Without `KANEVAS_STUB`, both answer 404.
+  identifier redirects back to the choice page. 
 - **Test accounts** (identifier → name): `antor` → Antor, `lea` → Léa, `teo` → Teo, `mira` → Mira, `admin` → Admin
   (Authelia group `parents`).
 - **Starting world** (seeded on an empty database): universe « Lame d'Ébène » (owner `antor`, member `lea`), with

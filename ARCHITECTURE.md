@@ -15,7 +15,7 @@ Image of the build pod: `sdlc-runner-ios`; `xcodebuild` is the bench shim (skill
 - **AD-4 — Failure handling.** `didFailProvisionalNavigation`/`didFail` and HTTP ≥ 500 on the main frame show E-2 (B-6); Retry reloads the last URL.
 - **AD-5 — Base URL is configuration**, read from Info.plist, overridable by launch argument `-KANEVAS_URL` so UI tests point at the stub.
 - **AD-6 — Tests.** Unit tests (XCTest) on the navigation policy and error mapping (pure functions). UI tests on an iPad simulator:
-  Kanevas in stub mode (`KANEVAS_STUB=1`, node only) is started on the bench and the app pointed at it; they cover P-1 to P-5 and attach screenshots (target; built so far: unit tests of the base URL and of the navigation policy, UI tests for the harness, the account choice page, external links, P-4 offline/Retry and the 5xx/4xx bounds of E-2). The stub
+  Kanevas in stub mode (`KANEVAS_STUB=1`, node only) is started on the bench and the app pointed at it; they cover P-1 to P-5 and attach screenshots (built: unit tests of the base URL and of the navigation policy, UI tests for the harness, the account choice page, external links, P-4 offline/Retry and the 5xx/4xx bounds of E-2, and the session of P-1 to P-3). The stub
   does not run Authelia (Kanevas AD-15, AD-55): an unauthenticated request is redirected to the stub's test-account
   selection, and `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie. P-1 and P-3 are proven
   on that path; P-3 expires the session by clearing the cookies of the WKWebView data store. A real Authelia is not tested by the chain.

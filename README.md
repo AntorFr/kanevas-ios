@@ -31,9 +31,9 @@ xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'
 Unit tests alone: add `-only-testing:KanevasUnitTests`; one UI class: `-only-testing:KanevasUITests/<Class>`. The UI tests start Kanevas in stub mode themselves (except `LinksTests`, `UnreachableStatesTests` and `UnreachableBoundariesTests`, which serve their own pages from loopback servers;
 the others, `SessionTests` (sign-in, persistence, expiry) among them, need `node` (>= 20), `curl`, `tar`, a SHA-256 tool and network; see `docs/tests.md`). They serve a pinned, prebuilt Kanevas page, downloaded by `Scripts/fetch-kanevas-web.sh`: the version is the one line of `KANEVAS_WEB_VERSION`, and changing that line is the only way to change the page served. Bench unreachable: exit code 3, not a red test (that code comes from the bench shim). If node or network is missing, the script exits 3 inside the UI test, which then fails: that is the bench's fault, not the app's.
 
-Run the app by hand against the stub: download the pinned page with `dir=$(sh Scripts/fetch-kanevas-web.sh)`, then in that folder
+Run the app by hand against the stub: download the pinned page with `dir=$(sh Scripts/fetch-kanevas-web.sh)`, (cached under `$TMPDIR/kanevas-ios-web/<version>`, or `$KANEVAS_WEB_CACHE`; a checked cache is reused without network), then `cd "$dir"`,
 `npm ci --omit=dev` and `SESSION_SECRET=0123456789abcdef0123 node lancer-bouchon.mjs --port 3055 --data /tmp/k` (the stub serves the account choice page; see `docs/tests.md`), then, on a Mac with XcodeGen,
-`xcodegen generate` (not available in the build pod; the bench shim generates the project itself), open `Kanevas.xcodeproj`, and add `-KANEVAS_URL http://127.0.0.1:3055` to the `Kanevas` scheme
+`xcodegen generate` (not available in the build pod; the bench shim generates the project itself), open `Kanevas.xcodeproj`, and add `-KANEVAS_URL` and `http://127.0.0.1:3055` as two separate arguments to the `Kanevas` scheme
 (Run > Arguments) before running on an iPad simulator, in the Debug configuration (only Debug allows the stub's plain HTTP, see ATS in `docs/tests.md`).
 
 Distribution is by sideload (free Apple ID); nothing is deployed to the cluster.
