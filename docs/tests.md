@@ -54,7 +54,7 @@ The bench needs `node` (>= 20), `curl`, `tar`, a SHA-256 tool and network (the f
   character sheets such as « Maître Aldric » and « Bran Corvalis » (sections « Apparence », a GM-only « Vérité — MJ seul »)
   and a graph map « Carte de la côte » holding the places « Port-Sel » and the sheet of « Maître Aldric ».
   Other universes: « Les Landes grises » (`mira`), « Les Cendres de Vaëlis » (`admin`, `antor` member), « Essai Kanka ».
-- **Pages served** (single-page app, needs Kanevas' `dist/public` build, which the harness provides):
+- **Pages served** (single-page app, the page of the pinned archive; the harness builds nothing):
   map `/univers/:id/cartes/:cid` (list `/univers/:id/cartes`), sheet `/univers/:id/fiche/:fid`,
   sheet list by type `/univers/:id/fiches/:type`. The lore of a sheet is read through `GET /api/univers/:id/fiches/...`.
 - **Session expiry**: the session is a signed cookie; the tests expire it by clearing the cookies of the WKWebView data store.
