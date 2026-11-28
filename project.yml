@@ -1,0 +1,83 @@
+name: Kanevas
+options:
+  bundleIdPrefix: fr.antor
+  deploymentTarget:
+    iOS: "16.0"
+packages:
+  KanevasCore:
+    path: .
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    TARGETED_DEVICE_FAMILY: "2"
+    CODE_SIGNING_ALLOWED: "NO"
+    CODE_SIGNING_REQUIRED: "NO"
+targets:
+  Kanevas:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - package: KanevasCore
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Kanevas
+        KanevasBaseURL: https://kanevas.berard.me
+        KanevasAllowedHosts: kanevas.berard.me,auth.berard.me
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.antor.kanevas
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    postBuildScripts:
+      # Debug only (the bench): plain HTTP to local addresses so the stub can be served; Release keeps ATS at its
+      # default, and NSAllowsArbitraryLoads is never set (ARCHITECTURE.md, Security).
+      - name: ATS local networking (Debug)
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "$CONFIGURATION" = "Debug" ]; then
+            plist="$TARGET_BUILD_DIR/$INFOPLIST_PATH"
+            /usr/libexec/PlistBuddy -c "Delete :NSAppTransportSecurity" "$plist" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" \
+              -c "Add :NSAppTransportSecurity:NSAllowsLocalNetworking bool true" "$plist"
+          fi
+  KanevasUnitTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/UnitTests
+        optional: true
+    dependencies:
+      - package: KanevasCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.antor.kanevas.unittests
+        GENERATE_INFOPLIST_FILE: YES
+  KanevasUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Tests/UITests
+        optional: true
+    dependencies:
+      - target: Kanevas
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.antor.kanevas.uitests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Kanevas:
+    build:
+      targets:
+        Kanevas: all
+    test:
+      config: Debug
+      targets:
+        - KanevasUnitTests
+        - KanevasUITests
