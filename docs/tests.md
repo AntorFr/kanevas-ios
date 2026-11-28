@@ -18,8 +18,8 @@ launches the app with `-KANEVAS_URL` on it and `-KANEVAS_FAKE_OPENER` (Debug dou
 
 All UI tests play on the bench with `xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`.
 One UI class alone: add `-only-testing:KanevasUITests/<Class>` (e.g. `UnreachableBoundariesTests`). Other UI classes: `StubHarnessUITests` (the harness starts the stub), `StubSignInPageUITests` (account choice page), `OfflineTests` (P-4: nothing listens, then the stub starts and Retry loads its page).
-Web build: the suite command in `.sdlc.yaml` starts with `sh Scripts/build-kanevas-web.sh`, which runs in the pod (it needs `cargo` and `wasm-pack`, which the Mac of the bench lacks). It builds the web of `AntorFr/kanevas` and shares its `public/` and `wasm/` plus a `REVISION` file in `.kanevas-web/` (git-ignored, or `$KANEVAS_WEB_DIR`), which the bench reads; it rebuilds only when the Kanevas HEAD differs from `REVISION`. Any failure exits 3 (environment, not a red test). Without it, `Scripts/fetch-kanevas.sh` of the `kanevas-ios-session` slice exits 3 « no shared web build in .kanevas-web ». The suite the chain plays is therefore `sh Scripts/build-kanevas-web.sh && xcodebuild test …`; the report lands in `.banc/rapport-tests/junit.xml`.
-Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` missing: `Scripts/fetch-kanevas.sh` exits 3; the harness then throws and the UI test fails (it is the bench, not the app, that is at fault).
+Kanevas page: the UI tests serve a pinned, prebuilt release of Kanevas (nothing of it is built here). The pin is the one line of `KANEVAS_WEB_VERSION` at the repository root (a Release tag of `AntorFr/kanevas` that carries `kanevas-web-<version>.tar.gz`, e.g. `v0.50.0`); changing that line, and nothing else, changes the page the tests run against. The suite the chain plays is `xcodebuild test -scheme Kanevas -destination 'platform=iOS Simulator,name=iPad'`; the report lands in `.banc/rapport-tests/junit.xml`.
+The bench needs `node` (>= 20), `curl`, `tar`, a SHA-256 tool and network (the first stub of a run also runs `npm ci --omit=dev` in the archive). Bench unreachable, or network/`node` missing: code 3 (not a red test); the harness then throws and the UI test fails (it is the bench, not the app, that is at fault).
 
 ## Harness (`Tests/UITests/Harness/`)
 
@@ -27,16 +27,10 @@ Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` miss
 
 - `StubServer` starts and stops the stub at any moment of a test, also after the app has launched. Host `127.0.0.1`. `startStub()` picks a
   free port per test (`StubServer.freePort()`); `KANEVAS_STUB_PORT` forces one (a bare `StubServer()` defaults to `3055`). A port
-  already answering fails the start with a clear message, instead of testing a stub left by a cut run. It runs `node --import tsx src/server.ts` in the Kanevas clone with
-  `KANEVAS_STUB=1`, `PORT`, a `DB_PATH` and a `SESSION_SECRET` (fresh per stub: a session cookie left in the simulator's web view by an earlier test, cookies ignoring the port, no longer verifies) in a temporary folder: the clone stays read-only.
-  The test process is a simulator process, so children are spawned with `posix_spawn` (`Process` does not exist on iOS).
-- Kanevas clone: `KANEVAS_SRC` (path of a clone with `node_modules` installed and the web build `dist/public`; the harness does not build it and fails with a message if the build is missing), else `Scripts/fetch-kanevas.sh` clones
-  `https://github.com/AntorFr/kanevas` (runs `npm ci`) outside this repository, in `$TMPDIR/kanevas-ios-stub-src`, checks it out at the commit the web build came from, copies the shared web build into its `dist/public`,
-  and prints its path (exit 3 if the shared build is missing). Nothing of Kanevas is committed here.
-- Web build of Kanevas: the Mac has no `cargo` nor `wasm-pack`, so it never builds the web. The pod does, before `xcodebuild`
-  (`installation:` of `.sdlc.yaml` runs `Scripts/build-kanevas-web.sh`): it builds `dist/public` of `AntorFr/kanevas` HEAD and shares `dist/public` and `dist/wasm` (the stub server loads the Wasm core) in the untracked, git-ignored
-  `<repo>/.kanevas-web/public`, with the Kanevas commit in `<repo>/.kanevas-web/REVISION` (`KANEVAS_WEB_DIR` overrides; rebuilt only when
-  that HEAD changes). `node_modules` is never shared (esbuild binaries are per OS).
+  already answering fails the start with a clear message, instead of testing a stub left by a cut run. The test process is a simulator process, so children are spawned with `posix_spawn` (`Process` does not exist on iOS).
+- Pinned archive: `Scripts/fetch-kanevas-web.sh [version]` reads `KANEVAS_WEB_VERSION`, downloads `kanevas-web-<version>.tar.gz` and its `.sha256` from the Release of that tag, checks the sum, unpacks it outside the repository into `${KANEVAS_WEB_CACHE:-$TMPDIR/kanevas-ios-web}/<version>` (reused without network once checked) and prints that folder. Exit 1: `checksum mismatch`, or `no archive for <version>` (Release or asset absent); exit 3: network, `node`, `curl`, `tar` or the cache. `KANEVAS_WEB_BASE_URL` overrides the download base for the script's own tests, `sh Tests/Scripts/fetch-kanevas-web-tests.sh` (no bench, no network, not part of the `xcodebuild` suite: run it by hand after touching the script). A UI test failing with `fetch-kanevas-web.sh failed (exit 3)` is the bench's fault (node or network), not a red test of the app. The harness (`KanevasWeb`) runs it once per run, repeats its failure verbatim, reads the archive's `VERSION`, requires it to equal the pin (without the leading `v`) and logs it at the head of the suite.
+- `StubServer` runs `node lancer-bouchon.mjs --port <free port> --data <temp folder>` of the archive, plus a `SESSION_SECRET` in the environment (fresh per stub), and waits for `/connexion-bouchon`.
+
 - `expectInWebView(_:of:stub:expecting:)` waits for an element of the web view; on failure it attaches `stub.log`, the answer of
   `GET /connexion-bouchon`, the accessibility hierarchy and a screenshot, and names the cause (stub silent, page served
   differently, page served but element not found).
@@ -46,21 +40,20 @@ Bench unreachable: code 3 (not a red test). Clone, `git`, network or `node` miss
 - ATS: the Debug configuration (the bench's) adds `NSAllowsLocalNetworking` only, through a post-build step of the app
   target, so the stub is served over HTTP; Release keeps the default; `NSAllowsArbitraryLoads` is never set.
 
-## Stub facts (read in the code of `AntorFr/kanevas`: `src/routes/bouchon.ts`, `src/bouchon/depart.ts`, its AD-15 and AD-55)
+## Stub facts (the stub of the pinned archive, started by `lancer-bouchon.mjs --port <port> --data <folder>` with `SESSION_SECRET` in the environment; origin: `AntorFr/kanevas` AD-15, AD-55)
 
-- **Origin**: a plain `http://<host>:<PORT>`, `PORT` default 3001; the server listens on `0.0.0.0`. No Authelia.
-  Stub mode refuses to start if any `OIDC_*` variable is set.
+- **Origin**: a plain `http://<host>:<port>`, the `--port` the harness chose. No Authelia. The stub refuses to start if any `OIDC_*` variable is set.
 - **Sign-in**: without a session, a request is redirected to `GET /connexion-bouchon`, the test-account choice page
   (title « Choisir un compte de test », one button « Se connecter en tant que <Name> » per account).
   `POST /connexion-bouchon` (form body `compte=<identifier>`) sets the session cookie and redirects to `/`; an unknown
-  identifier redirects back to the choice page. Without `KANEVAS_STUB`, both answer 404.
+  identifier redirects back to the choice page. 
 - **Test accounts** (identifier → name): `antor` → Antor, `lea` → Léa, `teo` → Teo, `mira` → Mira, `admin` → Admin
   (Authelia group `parents`).
 - **Starting world** (seeded on an empty database): universe « Lame d'Ébène » (owner `antor`, member `lea`), with
   character sheets such as « Maître Aldric » and « Bran Corvalis » (sections « Apparence », a GM-only « Vérité — MJ seul »)
   and a graph map « Carte de la côte » holding the places « Port-Sel » and the sheet of « Maître Aldric ».
   Other universes: « Les Landes grises » (`mira`), « Les Cendres de Vaëlis » (`admin`, `antor` member), « Essai Kanka ».
-- **Pages served** (single-page app, needs Kanevas' `dist/public` build, which the harness provides):
+- **Pages served** (single-page app, the page of the pinned archive; the harness builds nothing):
   map `/univers/:id/cartes/:cid` (list `/univers/:id/cartes`), sheet `/univers/:id/fiche/:fid`,
   sheet list by type `/univers/:id/fiches/:type`. The lore of a sheet is read through `GET /api/univers/:id/fiches/...`.
 - **Session expiry**: the session is a signed cookie; the tests expire it by clearing the cookies of the WKWebView data store.

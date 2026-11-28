@@ -1,14 +1,14 @@
 import Foundation
 import XCTest
 
-/// Failure of the harness itself (clone, node, stub start): a bench problem, not a red product test.
+/// Failure of the harness itself (archive fetch, node, stub start): a bench problem, not a red product test.
 struct HarnessError: Error, CustomStringConvertible {
     let description: String
     init(_ description: String) { self.description = description }
 }
 
-/// The Kanevas stub (`KANEVAS_STUB=1`, node only) on a chosen host and port, startable and stoppable at any
-/// moment of a test, also after the app has launched (AD-socle-2). The clone of Kanevas is read-only: the
+/// The Kanevas stub (from the pinned archive, node only) on a chosen host and port, startable and stoppable at any
+/// moment of a test, also after the app has launched (AD-socle-2). The archive of Kanevas is read-only: the
 /// database and the session secret live in a temporary folder.
 final class StubServer {
     let host: String
@@ -63,22 +63,20 @@ final class StubServer {
         if isAnswering() {
             throw HarnessError("port \(port) is already served by another process (a stub left from an interrupted run?): free it or set KANEVAS_STUB_PORT")
         }
-        let source = try KanevasSource.path()
+        let source = try KanevasWeb.path()
         try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
+        // The archive's launcher (`node lancer-bouchon.mjs [--port N] [--data DIR]`) takes the port and the database
+        // folder as options; the session secret is read by the server from the environment (inherited by the launcher).
         let env: [String: String] = [
             "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
             "HOME": NSHomeDirectory(),
-            "KANEVAS_STUB": "1",
-            "PORT": String(port),
-            "DB_PATH": workDir.appendingPathComponent("kanevas.db").path,
             // Fresh per stub: a session cookie left in the simulator's web view data store by an earlier test or run
             // (cookies ignore the port) no longer verifies, so the app starts signed out, as the tests assume.
             "SESSION_SECRET": "kanevas-ios-harness-\(UUID().uuidString)",
-            "NODE_ENV": "development",
         ]
-        // The clone is read-only: `tsx` runs the TypeScript sources, no build writes into it.
         pid = try Spawn.run("/bin/sh",
-                            ["-c", "cd \"$1\" && exec node --import tsx src/server.ts", "sh", source],
+                            ["-c", "cd \"$1\" && exec node lancer-bouchon.mjs --port \"$2\" --data \"$3\"", "sh",
+                             source, String(port), workDir.path],
                             env: env,
                             log: workDir.appendingPathComponent("stub.log").path)
         do {
